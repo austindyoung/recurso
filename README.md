@@ -44,7 +44,7 @@ const buySell = recurso(
   }
 )
 ```
-##List-based recursion
+## List-based recursion
 ```
 const efficientSubsets = recursoList(
   { base: [[[]]], next: [i => i - 1] },

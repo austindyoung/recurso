@@ -1,5 +1,15 @@
 # recurso
 Recursion optimization and abstraction utility
+## First-order recursion
+```
+const fact = recurso(
+  { base: [1], next: [n => n - 1] },
+  ([nextCase], n) => n * nextCase
+)
+```
+
+
+## Higher-order recursion
 ```
 const fib = recurso(
   { base: [0, 1], next: [n => n - 2, n => n - 1] },
@@ -13,13 +23,6 @@ const numDerangements = recurso(
     base: [1, 0]
   },
   ([x, y], n) => (n - 1) * (x + y)
-)
-```
-
-```
-const efficientSubsets = recursoList(
-  { base: [[[]]], next: [i => i - 1] },
-  ([subsets], el) => [...subsets, ...subsets.map(subset => [el, ...subset])]
 )
 ```
 
@@ -41,9 +44,11 @@ const buySell = recurso(
   }
 )
 ```
+##List-based recursion
 ```
-const fact = recurso(
-  { base: [1], next: [n => n - 1] },
-  ([nextCase], n) => n * nextCase
+const efficientSubsets = recursoList(
+  { base: [[[]]], next: [i => i - 1] },
+  ([subsets], el) => [...subsets, ...subsets.map(subset => [el, ...subset])]
 )
 ```
+

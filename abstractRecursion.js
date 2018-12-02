@@ -87,7 +87,6 @@ const recurso = (
   )
   const isAggregateFree = aggregate === DefaultAggregator
 
-  const getIsTerminal = (c, b = base) => getBaseCase(c, b) !== undefined
   if (isAggregateFree) {
     let currentCase = n
     let nextCases
@@ -103,6 +102,8 @@ const recurso = (
       throw 'recurso reached maximum iterations'
     return baseCaseResult
   }
+  const getIsTerminal = (c, b = base) => getBaseCase(c, b) !== undefined
+
   if (shouldBeSinglePassOptimized) {
     const { accs, c, count, baseBase } = recurso({
       base: ({ accs, c, count, baseBase }) => {

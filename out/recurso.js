@@ -4,6 +4,7 @@ const DefaultRecurrence = (x, c) => identity(x);
 const DefaultNext = [x => x - 1];
 const access = (source, argument) => typeof source === 'function' ? source(argument) : source[argument];
 const getIteratedNextFunction = (next, tuplicity) => {
+    debugger;
     return !(next instanceof Array)
         ? x => Array.from(new Array(tuplicity === Infinity && next === DefaultNext
             ? x
@@ -15,31 +16,26 @@ const getIteratedNextFunction = (next, tuplicity) => {
             ...Array.from(new Array(next.length))
                 .map(_ => acc.slice(-1).map(fn => _x => fn(fn(_x))))
                 .reduce((acc, arr) => [...arr, ...acc]),
-            ...acc
+            ...acc,
         ], next)
             .map(fn => fn(x));
 };
-const getDefaultTuplicity = (next, base) => next instanceof Array
-    ? next.length
-    : base instanceof Array
-        ? base.length
-        : Infinity;
+const getDefaultTuplicity = (next, base) => base instanceof Array ? base.length : next instanceof Array ? next.length : 1;
 const getFirstCases = (iterator, n = 0) => {
     let count = 0;
     let firstCases = [];
-    debugger;
     while (count < n) {
         firstCases = [...firstCases, iterator.next().value];
         count++;
     }
-    debugger;
     return firstCases;
 };
 const getGetBaseCase = (base, ordering) => {
-    debugger;
     if (ordering && base instanceof Array) {
         const firstCases = getFirstCases(ordering, base.length);
-        return recursiveCase => base[[...new Array(base.length)].map((_, i) => i).filter(i => firstCases[i] === recursiveCase)[0]];
+        return recursiveCase => base[[...new Array(base.length)]
+            .map((_, i) => i)
+            .filter(i => firstCases[i] === recursiveCase)[0]];
     }
     return recursiveCase => typeof base === 'function' ? base(recursiveCase) : base[recursiveCase];
 };
@@ -92,6 +88,7 @@ const getExplicitBaseFromOrdering = ({ base, ordering = makeRangeIterator(), off
 const getIsSinglePassTailable = (base, ordering) => getIsIterable(base) || ordering;
 const recurso = ({ base = undefined, ordering = undefined, next = DefaultNext, recurrence = DefaultRecurrence, tuplicity = getDefaultTuplicity(next, base), offset = 0, } = {}) => recursiveCase => {
     const _next = getIteratedNextFunction(next, tuplicity);
+    debugger;
     const isTailRecursive = recurrence === DefaultRecurrence;
     if (isTailRecursive) {
         let currentCase = recursiveCase;
@@ -99,6 +96,7 @@ const recurso = ({ base = undefined, ordering = undefined, next = DefaultNext, r
         let baseCaseResult = access(base, currentCase);
         let numIterations = 0;
         while (baseCaseResult === undefined && numIterations < MaxIterability) {
+            debugger;
             numIterations += 1;
             nextCases = _next(currentCase);
             currentCase = nextCases.slice(-1)[0];
@@ -117,6 +115,7 @@ const recurso = ({ base = undefined, ordering = undefined, next = DefaultNext, r
             return getBaseCase(recursiveCase);
         }
         const nextInnerCase = innerIterator.next().value;
+        debugger;
         return recurso({
             base: ({ accs, outerCase }) => {
                 debugger;
@@ -128,24 +127,26 @@ const recurso = ({ base = undefined, ordering = undefined, next = DefaultNext, r
                 const lastAccs = accs.slice(tuplicity === Infinity ? 0 : 1);
                 const newAcc = recurrence(accs, innerCase);
                 const nextInnerCase = innerIterator.next().value;
-                return [{
+                return [
+                    {
                         accs: [...(tuplicity === Infinity ? [newAcc] : lastAccs), newAcc],
                         outerCase: _next(outerCase).slice(-1)[0],
-                        innerCase: nextInnerCase
-                    }];
+                        innerCase: nextInnerCase,
+                    },
+                ];
             },
-            tuplicity
         })({
             accs: getExplicitBaseFromOrdering({ base, ordering, offset }),
             innerCase: nextInnerCase,
-            outerCase: recursiveCase
+            outerCase: recursiveCase,
         });
     }
+    const shouldBeDoublePassOptimized = !!ordering;
 };
-const recursoList = (list, { base = undefined, recurrence = DefaultRecurrence, next = undefined, tuplicity = base instanceof Array ? base.length : undefined } = {}) => recurso({
+const recursoList = (list, { base = undefined, recurrence = DefaultRecurrence, tuplicity = base instanceof Array ? base.length : undefined, } = {}) => recurso({
     base,
-    next,
     recurrence,
-    tuplicity
+    tuplicity,
+    ordering: i => list[i],
 });
 //# sourceMappingURL=recurso.js.map

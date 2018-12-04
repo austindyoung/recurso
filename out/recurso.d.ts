@@ -26,9 +26,8 @@ declare const recurso: ({ base, ordering, next, recurrence, tuplicity, offset, }
     tuplicity?: number;
     offset?: number;
 }) => (recursiveCase: any) => any;
-declare const recursoList: (list: any, { base, recurrence, next, tuplicity }?: {
+declare const recursoList: (list: any, { base, recurrence, tuplicity, }?: {
     base?: any;
     recurrence?: (x: any, c: any) => any;
-    next?: any;
     tuplicity?: number;
 }) => (recursiveCase: any) => any;

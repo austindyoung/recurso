@@ -1,0 +1,28 @@
+{
+  "name": "recurso",
+  "version": "1.0.0",
+  "description": "Recursion optimization and abstraction utility ## First-order recursion ``` const fact = recurso(   { base: [1], next: [n => n - 1] },   ([nextCase], n) => n * nextCase ) ```",
+  "main": "abstractRecursion.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/austindyoung/recurso.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/austindyoung/recurso/issues"
+  },
+  "homepage": "https://github.com/austindyoung/recurso#readme",
+  "devDependencies": {
+    "ts-loader": "^5.3.1",
+    "webpack": "^4.27.1",
+    "webpack-cli": "^3.1.2"
+  },
+  "dependencies": {
+    "@webpack-cli/init": "^0.1.2"
+  }
+}

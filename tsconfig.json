@@ -62,21 +62,17 @@
 {
   "compileOnSave": true,
   "compilerOptions": {
+    "moduleResolution": "node",
+    "module": "amd",
     "noEmitOnError": true,
     "target": "es6",
-    "module": "amd",
     "removeComments": true,
     "preserveConstEnums": true,
     "sourceMap": true,
-    "outDir": "out",
+    "outDir": "dist",
     "skipLibCheck": true,
-    "outFile": "out/recurso.js",
-    "declaration": true, 
-    "experimentalDecorators":  true,
-	// "lib": [
-  //          "dom",
-  //          "es6",
-  //          "es2015.promise"
-  //      ]
-  }
+    "declaration": true,
+    "experimentalDecorators": true
+  },
+  "files": ["./src/recurso.ts", "./src/test.ts"]
 }

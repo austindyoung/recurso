@@ -1,4 +1,4 @@
-import { recurso, recursoList } from './recurso'
+// import { robo, roboList } from './robo'
 let describe
 let it
 let expect
@@ -13,12 +13,12 @@ const getKbonacciSource = k => n => {
 const triFibonacciSource = getKbonacciSource(3)
 const quadFibonacciSource = getKbonacciSource(4)
 
-const fibonacci = recurso<number, number>({
+const fibonacci = robo<number, number>({
   base: [0, 1],
   recurrence: ([x, y]) => x + y,
 })
 
-const factorial = recurso<number, number>({
+const factorial = robo<number, number>({
   base: [1],
   recurrence: ([x], n: number) => n * x,
 })
@@ -26,7 +26,7 @@ const factorial = recurso<number, number>({
 const sum = arr => arr.reduce((sumAcc, c) => sumAcc + c, 0)
 
 const getKbonacci = k =>
-  recurso({
+  robo({
     base: [...new Array(k)].map((_, i) => i),
     recurrence: sum,
   })
@@ -34,37 +34,37 @@ const getKbonacci = k =>
 const triFibonacci = getKbonacci(3)
 const quadFibonacci = getKbonacci(4)
 
-const explicitFibonacci = recurso<number, number>({
+const explicitFibonacci = robo<number, number>({
   base: [0, 1],
   next: [n => n - 2, n => n - 1],
   recurrence: ([x, y]) => x + y,
 })
 
-const implicitExplicitFibonacci = recurso<number, number>({
+const implicitExplicitFibonacci = robo<number, number>({
   base: [0, 1],
   next: [n => n - 1],
   recurrence: ([x, y]) => x + y,
 })
 
-const explicitFactorial = recurso<number, number>({
+const explicitFactorial = robo<number, number>({
   base: [1],
   next: [n => n - 1],
   recurrence: ([x], n) => n * x,
 })
 
-const numDerangements = recurso<number, number>({
+const numDerangements = robo<number, number>({
   base: [1, 0],
   recurrence: ([x, y], n: number) => (n - 1) * (x + y),
 })
 
-const explicitNumDerangements = recurso<number, number>({
+const explicitNumDerangements = robo<number, number>({
   base: [1, 0],
   next: [(n: number) => n - 1, (n: number) => n - 2],
   recurrence: ([x, y], n) => (n - 1) * (x + y),
 })
 
 const subsets = l =>
-  recursoList(l, {
+  roboList(l, {
     base: [[[]]],
     recurrence: ([subsets], el) => [
       ...subsets,
@@ -73,7 +73,7 @@ const subsets = l =>
   })
 
 const and = l =>
-  recursoList(l, {
+  roboList(l, {
     base: x => {
       if (!x) return false
     },
@@ -84,7 +84,7 @@ interface Change {
   target: number
 }
 const makeChange = (coins, target) =>
-  recurso<number, Change>({
+  robo<number, Change>({
     base: ({ coins, target }) => {
       if (!coins.length) return 0
       if (!target) return 1
@@ -104,7 +104,7 @@ interface BinarySearch<T> {
 }
 
 const binarySearch = <T>(arr: T[], target: T) =>
-  recurso<number, BinarySearch<T>>({
+  robo<number, BinarySearch<T>>({
     base: ({ subArr, displacement }) => {
       if (!subArr.length) return -1
       if (subArr[0] === target) return displacement

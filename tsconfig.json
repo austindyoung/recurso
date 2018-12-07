@@ -63,7 +63,7 @@
   "compileOnSave": true,
   "compilerOptions": {
     "moduleResolution": "node",
-    "module": "amd",
+    "module": "none",
     "noEmitOnError": true,
     "target": "es6",
     "removeComments": true,
@@ -74,5 +74,5 @@
     "declaration": true,
     "experimentalDecorators": true
   },
-  "files": ["./src/recurso.ts", "./src/test.ts"]
+  "files": ["./src/robo.ts", "./src/test.ts"]
 }

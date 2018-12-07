@@ -1,8 +1,8 @@
-# recurso
+# robo
 Recursion optimization and abstraction utility
 ## First-order recursion
 ```
-const fact = recurso(
+const fact = robo(
   { base: [1], next: [n => n - 1] },
   ([nextCase], n) => n * nextCase
 )
@@ -11,14 +11,14 @@ const fact = recurso(
 
 ## Higher-order recursion
 ```
-const fib = recurso(
+const fib = robo(
   { base: [0, 1], next: [n => n - 2, n => n - 1] },
   ([x, y]) => x + y
 )
 ```
 
 ```
-const numDerangements = recurso(
+const numDerangements = robo(
   {
     base: [1, 0]
   },
@@ -27,7 +27,7 @@ const numDerangements = recurso(
 ```
 
 ```
-const buySell = recurso(
+const buySell = robo(
   {
     next: maxProfitNextCase,
     base: arr => {
@@ -46,7 +46,7 @@ const buySell = recurso(
 ```
 ## List-based recursion
 ```
-const efficientSubsets = recursoList(
+const efficientSubsets = roboList(
   { base: [[[]]], next: [i => i - 1] },
   ([subsets], el) => [...subsets, ...subsets.map(subset => [el, ...subset])]
 )

@@ -1,6 +1,6 @@
 module.exports = {
   entry: {
-    test: './dist/test.js',
+    test: './dist/robo.js',
   },
   output: { filename: 'bundle.js' },
   module: {

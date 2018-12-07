@@ -1,22 +1,22 @@
 {
-  "name": "recurso",
+  "name": "robo",
   "version": "1.0.0",
-  "description": "Recursion optimization and abstraction utility ## First-order recursion ``` const fact = recurso(   { base: [1], next: [n => n - 1] },   ([nextCase], n) => n * nextCase ) ```",
+  "description": "Recursion optimization and abstraction utility ## First-order recursion ``` const fact = robo(   { base: [1], next: [n => n - 1] },   ([nextCase], n) => n * nextCase ) ```",
   "main": "abstractRecursion.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/austindyoung/recurso.git"
+    "url": "git+https://github.com/austindyoung/robo.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/austindyoung/recurso/issues"
+    "url": "https://github.com/austindyoung/robo/issues"
   },
-  "homepage": "https://github.com/austindyoung/recurso#readme",
+  "homepage": "https://github.com/austindyoung/robo#readme",
   "devDependencies": {
     "ts-loader": "^5.3.1",
     "webpack": "^4.27.1",

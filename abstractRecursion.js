@@ -56,7 +56,7 @@ const getBaseCase = (cse, base) =>
 //   }
 //   return explicitBase
 // }
-const recurso = (
+const robo = (
   {
     base,
     memoize,
@@ -99,13 +99,13 @@ const recurso = (
       baseCaseResult = getBaseCase(currentCase, base)
     }
     if (numIterations === MaxIterability)
-      throw 'recurso reached maximum iterations'
+      throw 'robo reached maximum iterations'
     return baseCaseResult
   }
   const getIsTerminal = (c, b = base) => getBaseCase(c, b) !== undefined
 
   if (shouldBeSinglePassOptimized) {
-    const { accs, c, count, baseBase } = recurso({
+    const { accs, c, count, baseBase } = robo({
       base: ({ accs, c, count, baseBase }) => {
         if (getIsTerminal(c, baseBase)) return { accs, count, baseBase, c }
       },
@@ -155,7 +155,7 @@ const recurso = (
   }
 
   if (shouldBeDoublePassTailOptimized) {
-    return recurso({
+    return robo({
       base: ({ c, baseBase, cont }) => {
         if (getIsTerminal(c, baseBase)) {
           return cont(getBaseCases(c))
@@ -206,7 +206,7 @@ const recurso = (
   }
 }
 
-const recursoList = (
+const roboList = (
   {
     base,
     memoize,
@@ -217,7 +217,7 @@ const recursoList = (
   },
   agg
 ) => arr =>
-  recurso(
+  robo(
     {
       memoize,
       order,

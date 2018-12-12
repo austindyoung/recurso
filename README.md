@@ -1,6 +1,13 @@
 # robo
-Recursion optimization and abstraction utility
+
+Recursive Optimization through Bare Operation
+
+leveraging of parameter destructuring
+imoplicit tail call optimization
+recursive abstraction
+
 ## First-order recursion
+
 ```
 const fact = robo(
   { base: [1], next: [n => n - 1] },
@@ -8,12 +15,12 @@ const fact = robo(
 )
 ```
 
-
 ## Higher-order recursion
+
 ```
 const fib = robo(
   { base: [0, 1], next: [n => n - 2, n => n - 1] },
-  ([x, y]) => x + y
+  ([subcase0, subcase1]) => x + y
 )
 ```
 
@@ -22,7 +29,7 @@ const numDerangements = robo(
   {
     base: [1, 0]
   },
-  ([x, y], n) => (n - 1) * (x + y)
+  ([subcase0, subcase1], n) => (n - 1) * (x + y)
 )
 ```
 
@@ -44,11 +51,12 @@ const buySell = robo(
   }
 )
 ```
+
 ## List-based recursion
+
 ```
 const efficientSubsets = roboList(
   { base: [[[]]], next: [i => i - 1] },
   ([subsets], el) => [...subsets, ...subsets.map(subset => [el, ...subset])]
 )
 ```
-

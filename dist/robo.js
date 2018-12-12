@@ -1,9 +1,9 @@
 const identity = x => x;
 const MaxIterability = 1000;
-const DefaultRecurrence = (x, c) => identity(x);
+const MaxBase = 100;
+const DefaultRecurrence = ([x], [c]) => c;
 const access = (source, argument) => typeof source === 'function' ? source(argument) : source[argument];
 const getIteratedNextFunction = (next, tuplicity) => {
-    debugger;
     return !(next instanceof Array)
         ? x => Array.from(new Array(tuplicity === Infinity
             ?
@@ -16,7 +16,7 @@ const getIteratedNextFunction = (next, tuplicity) => {
             ...Array.from(new Array(next.length))
                 .map(_ => acc.slice(-1).map(fn => _x => fn(fn(_x))))
                 .reduce((acc, arr) => [...arr, ...acc]),
-            ...acc,
+            ...acc
         ], next)
             .map(fn => fn(x));
 };
@@ -30,14 +30,14 @@ const getFirstCases = (iterator, n = 0) => {
     }
     return firstCases;
 };
-const getGetBaseCase = (base, ordering) => {
-    if (ordering && base instanceof Array) {
-        const firstCases = getFirstCases(ordering, base.length);
-        return recursiveCase => base[[...new Array(base.length)]
+const getGetBaseCaseAndFirstCases = (base, ordering) => {
+    const firstCases = getFirstCases(ordering, base.length);
+    return {
+        firstCases,
+        getBaseCase: recursiveCase => base[[...new Array(base.length)]
             .map((_, i) => i)
-            .filter(i => firstCases[i] === recursiveCase)[0]];
-    }
-    return recursiveCase => typeof base === 'function' ? base(recursiveCase) : base[recursiveCase];
+            .filter(i => firstCases[i] === recursiveCase)[0]]
+    };
 };
 function* makeRangeIterator(start = 0, end = Infinity, step = 1) {
     let iterationCount = 0;
@@ -52,24 +52,32 @@ function* makeOffsetIterator(orderable, offset = 0) {
     const iterator = toIterator(orderable);
     let next = iterator.next();
     while (!next.done) {
-        iterationCount++;
         if (iterationCount >= offset) {
             yield next.value;
         }
         next = iterator.next();
     }
-    return iterationCount;
 }
-function* toIterator(orderable) {
+function* toIterator(orderable, max = MaxIterability) {
     let iterationCount = 0;
+    const handleException = () => {
+        throw max === MaxIterability
+            ? 'max iterability exceeded'
+            : max === MaxBase
+                ? 'max base cases exceeded'
+                : 'generic iteration threshold exceeded message';
+    };
     if (typeof orderable === 'function') {
         while (true) {
+            if (iterationCount > max)
+                handleException();
             iterationCount++;
             yield orderable(iterationCount);
         }
     }
     else if (getIsIterator(orderable)) {
         for (const o of orderable) {
+            handleException();
             iterationCount++;
             yield o;
         }
@@ -78,7 +86,7 @@ function* toIterator(orderable) {
 }
 const getIsIterable = obj => Symbol.iterator in Object(obj);
 const getIsIterator = obj => getIsIterable(obj) && obj.next;
-const getExplicitBaseFromOrdering = ({ base, ordering = makeRangeIterator(), offset = 0, }) => {
+const getExplicitBaseFromOrdering = ({ base, ordering = makeRangeIterator(), offset = 0 }) => {
     if (base instanceof Array)
         return base;
     let i = 0;
@@ -105,7 +113,6 @@ const getExplicitBaseFromOrdering = ({ base, ordering = makeRangeIterator(), off
         return _base;
     }
 };
-const getIsSinglePassTailable = (base, ordering) => getIsIterable(base) || ordering;
 const _getBaseCaseResult = (recursiveCase, base, next, shouldAccumulate = false) => {
     let currentCase = recursiveCase;
     let nextCases;
@@ -113,7 +120,6 @@ const _getBaseCaseResult = (recursiveCase, base, next, shouldAccumulate = false)
     let numIterations = 0;
     let accs;
     while (baseCaseResult === undefined && numIterations < MaxIterability) {
-        debugger;
         numIterations += 1;
         nextCases = next(currentCase);
         currentCase = nextCases.slice(-1)[0];
@@ -134,59 +140,105 @@ const DefaultNext = n => {
     }
     throw 'must provide next function for non-numeric ordinals';
 };
-const robo = ({ base, ordering, memoize, next = DefaultNext, recurrence = DefaultRecurrence, tuplicity = getDefaultTuplicity(next, base), offset = 0, optimizeRuntime = false, }) => recursiveCase => {
+const _robo = ({ base, memoize, ordering = makeRangeIterator(), next = DefaultNext, recurrence = DefaultRecurrence, tuplicity = getDefaultTuplicity(next, base), offset = 0, optimizeRuntime = false }) => (recursiveCase) => {
     const _next = getIteratedNextFunction(next, tuplicity);
-    debugger;
     const isTailRecursive = recurrence === DefaultRecurrence;
     if (isTailRecursive) {
+        debugger;
         return getBaseCaseResult(recursiveCase, base, _next);
     }
-    const innerIterator = makeOffsetIterator(ordering || makeRangeIterator(), offset);
-    const shouldBeSinglePassOptimized = getIsSinglePassTailable(base, innerIterator);
-    const getBaseCase = getGetBaseCase(base, innerIterator);
+    const innerIterator = makeOffsetIterator(ordering, offset);
+    const shouldBeSinglePassOptimized = base instanceof Array;
     if (shouldBeSinglePassOptimized) {
-        debugger;
-        const getIsTerminal = currentCase => getBaseCase(currentCase) !== undefined;
+        const { getBaseCase, firstCases } = getGetBaseCaseAndFirstCases(base, innerIterator);
+        const getIsTerminal = (currentCase) => getBaseCase(currentCase) !== undefined;
         if (getIsTerminal(recursiveCase)) {
             return getBaseCase(recursiveCase);
         }
-        const nextInnerCase = innerIterator.next().value;
-        debugger;
-        return robo({
+        return _robo({
             base: ({ accs, outerCase }) => {
                 if (getIsTerminal(outerCase))
                     return accs.slice(-1)[0];
             },
-            next: ({ accs, outerCase, innerCase }) => {
+            next: ({ accs, outerCase, innerCases }) => {
                 const lastAccs = accs.slice(tuplicity === Infinity ? 0 : 1);
-                const newAcc = recurrence(accs, innerCase);
-                const nextInnerCase = innerIterator.next().value;
+                const newAcc = recurrence(accs, innerCases);
+                const lastCases = innerCases.slice(tuplicity === Infinity ? 0 : 1);
+                const nextInnerCases = [...lastCases, innerIterator.next().value];
                 return [
                     {
                         accs: [...(tuplicity === Infinity ? [newAcc] : lastAccs), newAcc],
                         outerCase: _next(outerCase).slice(-1)[0],
-                        innerCase: nextInnerCase,
-                    },
+                        innerCases: nextInnerCases
+                    }
                 ];
-            },
+            }
         })({
             accs: getExplicitBaseFromOrdering({ base, ordering, offset }),
-            innerCase: nextInnerCase,
-            outerCase: recursiveCase,
+            innerCases: firstCases,
+            outerCase: recursiveCase
         });
     }
-    const shouldBeDoublePassOptimized = !getIsSinglePassTailable && (!!ordering || getIsIterable(base));
-    if (shouldBeDoublePassOptimized) {
+};
+const Has = (x, props, has) => props.every(f => (has.indexOf(f) === -1 && !f(x)) || f(x));
+const BaseArray = x => x.hasOwnProperty('base') && x.base instanceof Array;
+const BaseFunction = x => x.hasOwnProperty('base') && typeof x.base === 'function';
+const Ordering = x => x.hasOwnProperty('ordering');
+const Next = x => x.hasOwnProperty('next');
+const Props = [BaseArray, BaseFunction, Ordering, Next];
+const ImplicitLinear = x => Has(x, [BaseArray, BaseFunction, Ordering, Next], [BaseArray]);
+const ExplicitLinear = x => x => Has(x, [BaseArray, BaseFunction, Ordering, Next], [BaseArray, Ordering, Next]);
+const ExplicitIndefiniteLinear = x => Has(x, [BaseArray, BaseFunction, Ordering, Next], [BaseFunction, Ordering, Next]);
+const NonLinear = x => Has(x, [BaseArray, BaseFunction, Ordering, Next], [BaseFunction, Next]);
+const roboLinear = ({ base, recurrence, ordering, tuplicity, offset, next }) => recursiveCase => {
+    const _next = getIteratedNextFunction(next, tuplicity);
+    const innerIterator = null;
+    const { getBaseCase, firstCases } = getGetBaseCaseAndFirstCases(base, innerIterator);
+    const getIsTerminal = (currentCase) => getBaseCase(currentCase) !== undefined;
+    if (getIsTerminal(recursiveCase)) {
+        return getBaseCase(recursiveCase);
+    }
+    return _robo({
+        base: ({ accs, outerCase }) => {
+            if (getIsTerminal(outerCase))
+                return accs.slice(-1)[0];
+        },
+        next: ({ accs, outerCase, innerCases }) => {
+            const lastAccs = accs.slice(tuplicity === Infinity ? 0 : 1);
+            const newAcc = recurrence(accs, innerCases);
+            const lastCases = innerCases.slice(tuplicity === Infinity ? 0 : 1);
+            const nextInnerCases = [...lastCases, innerIterator.next().value];
+            return [
+                {
+                    accs: [...(tuplicity === Infinity ? [newAcc] : lastAccs), newAcc],
+                    outerCase: _next(outerCase).slice(-1)[0],
+                    innerCases: nextInnerCases
+                }
+            ];
+        }
+    })({
+        accs: getExplicitBaseFromOrdering({ base, ordering, offset }),
+        innerCases: firstCases,
+        outerCase: recursiveCase
+    });
+};
+const robo = (params) => {
+    debugger;
+    if (ImplicitLinear(params)) {
+        const ordering = makeOffsetIterator(makeRangeIterator(), params.offset);
+        const next = getIteratedNextFunction(DefaultNext, params.tuplicity);
+        return roboLinear(Object.assign({}, params, { ordering,
+            next }));
+    }
+    if (ExplicitLinear(params)) {
+        return roboLinear(params);
+    }
+    if (ExplicitIndefiniteLinear(params)) {
+    }
+    if (NonLinear(params)) {
     }
 };
-const roboList = (list, { base = undefined, recurrence = DefaultRecurrence, tuplicity = base instanceof Array ? base.length : undefined, } = {}) => robo({
-    base,
-    recurrence,
-    tuplicity,
-    ordering: i => list[i],
-})(list.length - 1);
 const getKbonacciSource = k => n => {
-    debugger;
     if (n < k)
         return n;
     return [...new Array(k)]
@@ -197,57 +249,28 @@ const triFibonacciSource = getKbonacciSource(3);
 const quadFibonacciSource = getKbonacciSource(4);
 const fibonacci = robo({
     base: [0, 1],
-    recurrence: ([x, y]) => x + y,
+    recurrence: ([subcase0, subcase1]) => subcase0 + subcase1
 });
 const factorial = robo({
     base: [1],
-    recurrence: ([x], n) => n * x,
+    recurrence: ([subcase], [n]) => n * subcase
 });
 const sum = arr => arr.reduce((sumAcc, c) => sumAcc + c, 0);
 const getKbonacci = k => robo({
     base: [...new Array(k)].map((_, i) => i),
-    recurrence: sum,
+    recurrence: sum
 });
 const triFibonacci = getKbonacci(3);
 const quadFibonacci = getKbonacci(4);
 const explicitFibonacci = robo({
     base: [0, 1],
     next: [n => n - 2, n => n - 1],
-    recurrence: ([x, y]) => x + y,
-});
-const implicitExplicitFibonacci = robo({
-    base: [0, 1],
-    next: [n => n - 1],
-    recurrence: ([x, y]) => x + y,
-});
-const explicitFactorial = robo({
-    base: [1],
-    next: [n => n - 1],
-    recurrence: ([x], n) => n * x,
+    recurrence: ([subcase0, subcase1]) => subcase0 + subcase1
 });
 const numDerangements = robo({
     base: [1, 0],
-    recurrence: ([x, y], n) => (n - 1) * (x + y),
+    recurrence: ([subcase0, subcase1], [_, previous]) => previous * (subcase0 + subcase1)
 });
-const explicitNumDerangements = robo({
-    base: [1, 0],
-    next: [(n) => n - 1, (n) => n - 2],
-    recurrence: ([x, y], n) => (n - 1) * (x + y),
-});
-const subsets = l => roboList(l, {
-    base: [[[]]],
-    recurrence: ([subsets], el) => [
-        ...subsets,
-        ...subsets.map(subset => [el, ...subset]),
-    ],
-});
-const and = l => roboList(l, {
-    base: x => {
-        if (!x)
-            return false;
-    },
-    recurrence: ([conjunction], conjunct) => conjunction && conjunct,
-})(l);
 const makeChange = (coins, target) => robo({
     base: ({ coins, target }) => {
         if (!coins.length)
@@ -259,10 +282,10 @@ const makeChange = (coins, target) => robo({
     },
     next: ({ coins, target }) => [
         { coins, target: target - coins[0] },
-        { coins: coins.slice(1), target },
+        { coins: coins.slice(1), target }
     ],
     recurrence: sum,
-    memoize: [coins => coins.length, target => target],
+    memoize: [coins => coins.length, target => target]
 })({ coins, target });
 const binarySearch = (arr, target) => robo({
     base: ({ subArr, displacement }) => {
@@ -276,108 +299,69 @@ const binarySearch = (arr, target) => robo({
         if (target <= subArr[mid])
             return [{ subArr: subArr.slice(0, mid), displacement }];
         return [{ subArr: subArr.slice(mid), displacement: mid + displacement }];
-    },
+    }
 });
 const test = () => {
-    describe('single pass optimization works for', function () {
-        describe('fibonacci', function () {
-            it('base cases', function () {
-                expect(explicitFibonacci(0)).toBe(0);
-                expect(explicitFibonacci(1)).toBe(1);
-            });
-            it('rest', function () {
-                expect(explicitFibonacci(2)).toBe(1);
-                expect(explicitFibonacci(3)).toBe(2);
-                expect(explicitFibonacci(4)).toBe(3);
-                expect(explicitFibonacci(5)).toBe(5);
-                expect(explicitFibonacci(6)).toBe(8);
-            });
+    describe('fibonacci', function () {
+        it('base cases', function () {
+            expect(fibonacci(0)).toBe(0);
+            expect(fibonacci(1)).toBe(1);
         });
-        describe('implicit fibonacci', function () {
-            it('base cases', function () {
-                expect(implicitExplicitFibonacci(0)).toBe(0);
-                expect(implicitExplicitFibonacci(1)).toBe(1);
-            });
-            it('rest', function () {
-                expect(implicitExplicitFibonacci(2)).toBe(1);
-                expect(implicitExplicitFibonacci(3)).toBe(2);
-                expect(implicitExplicitFibonacci(4)).toBe(3);
-                expect(implicitExplicitFibonacci(5)).toBe(5);
-                expect(implicitExplicitFibonacci(6)).toBe(8);
-            });
+        it('rest', function () {
+            expect(fibonacci(2)).toBe(1);
+            expect(fibonacci(3)).toBe(2);
+            expect(fibonacci(4)).toBe(3);
+            expect(fibonacci(5)).toBe(5);
+            expect(fibonacci(6)).toBe(8);
         });
-        describe('super implicit fibonacci', function () {
-            it('base cases', function () {
-                expect(fibonacci(0)).toBe(0);
-                expect(fibonacci(1)).toBe(1);
-            });
-            it('rest', function () {
-                expect(fibonacci(2)).toBe(1);
-                expect(fibonacci(3)).toBe(2);
-                expect(fibonacci(4)).toBe(3);
-                expect(fibonacci(5)).toBe(5);
-                expect(fibonacci(6)).toBe(8);
-            });
+    });
+    describe('test tribonacci', function () {
+        it('base cases', function () {
+            expect(triFibonacci(0)).toBe(triFibonacciSource(0));
+            expect(triFibonacci(1)).toBe(triFibonacciSource(1));
         });
-        describe('test tribonacci', function () {
-            it('base cases', function () {
-                expect(triFibonacci(0)).toBe(triFibonacciSource(0));
-                expect(triFibonacci(1)).toBe(triFibonacciSource(1));
-            });
-            it('rest', function () {
-                expect(triFibonacci(2)).toBe(triFibonacciSource(2));
-                expect(triFibonacci(3)).toBe(triFibonacciSource(3));
-                expect(triFibonacci(4)).toBe(triFibonacciSource(4));
-                expect(triFibonacci(5)).toBe(triFibonacciSource(5));
-                expect(triFibonacci(6)).toBe(triFibonacciSource(6));
-            });
+        it('rest', function () {
+            expect(triFibonacci(2)).toBe(triFibonacciSource(2));
+            expect(triFibonacci(3)).toBe(triFibonacciSource(3));
+            expect(triFibonacci(4)).toBe(triFibonacciSource(4));
+            expect(triFibonacci(5)).toBe(triFibonacciSource(5));
+            expect(triFibonacci(6)).toBe(triFibonacciSource(6));
         });
-        describe('test quadbonacci', function () {
-            it('base cases', function () {
-                expect(quadFibonacci(0)).toBe(quadFibonacciSource(0));
-                expect(quadFibonacci(1)).toBe(quadFibonacciSource(1));
-            });
-            it('rest', function () {
-                expect(quadFibonacci(2)).toBe(quadFibonacciSource(2));
-                expect(quadFibonacci(3)).toBe(quadFibonacciSource(3));
-                expect(quadFibonacci(4)).toBe(quadFibonacciSource(4));
-                expect(quadFibonacci(5)).toBe(quadFibonacciSource(5));
-                expect(quadFibonacci(6)).toBe(quadFibonacciSource(6));
-            });
+    });
+    describe('test quadbonacci', function () {
+        it('base cases', function () {
+            expect(quadFibonacci(0)).toBe(quadFibonacciSource(0));
+            expect(quadFibonacci(1)).toBe(quadFibonacciSource(1));
         });
-        describe('factorial', function () {
-            it('base cases', function () {
-                expect(factorial(0)).toBe(1);
-            });
-            it('rest', function () {
-                expect(factorial(1)).toBe(1);
-                expect(factorial(2)).toBe(2);
-                expect(factorial(3)).toBe(6);
-                expect(factorial(4)).toBe(24);
-            });
+        it('rest', function () {
+            expect(quadFibonacci(2)).toBe(quadFibonacciSource(2));
+            expect(quadFibonacci(3)).toBe(quadFibonacciSource(3));
+            expect(quadFibonacci(4)).toBe(quadFibonacciSource(4));
+            expect(quadFibonacci(5)).toBe(quadFibonacciSource(5));
+            expect(quadFibonacci(6)).toBe(quadFibonacciSource(6));
         });
-        describe('explicit factorial', function () {
-            it('base cases', function () {
-                expect(explicitFactorial(0)).toBe(1);
-            });
-            it('rest', function () {
-                expect(explicitFactorial(1)).toBe(1);
-                expect(explicitFactorial(2)).toBe(2);
-                expect(explicitFactorial(3)).toBe(6);
-                expect(explicitFactorial(4)).toBe(24);
-            });
+    });
+    describe('factorial', function () {
+        it('base cases', function () {
+            expect(factorial(0)).toBe(1);
         });
-        describe('derangements', function () {
-            it('base cases', function () {
-                expect(numDerangements(0)).toBe(1);
-                expect(numDerangements(1)).toBe(0);
-            });
-            it('rest', function () {
-                expect(numDerangements(2)).toBe(1);
-                expect(numDerangements(3)).toBe(2);
-                expect(numDerangements(4)).toBe(9);
-                expect(numDerangements(5)).toBe(44);
-            });
+        it('rest', function () {
+            expect(factorial(1)).toBe(1);
+            expect(factorial(2)).toBe(2);
+            expect(factorial(3)).toBe(6);
+            expect(factorial(4)).toBe(24);
+        });
+    });
+    describe('derangements', function () {
+        it('base cases', function () {
+            expect(numDerangements(0)).toBe(1);
+            expect(numDerangements(1)).toBe(0);
+        });
+        it('rest', function () {
+            expect(numDerangements(2)).toBe(1);
+            expect(numDerangements(3)).toBe(2);
+            expect(numDerangements(4)).toBe(9);
+            expect(numDerangements(5)).toBe(44);
         });
     });
     describe('single pass optimization with custom ordering works for', function () { });

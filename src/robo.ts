@@ -1,5 +1,6 @@
 type Mappable<T, Ordinal = number> = ((o: Ordinal) => T) | T[]
-type Orderable<T> = ((o: number) => T) | Iterable<T> | IterableIterator<T>
+type Gener<Ordinal> = () => Iterator<Ordinal>
+type Orderable<Ordinal> = Gener<Ordinal>
 type Nextable<Ordinal = number> =
   | ((o: Ordinal) => Ordinal)[]
   | ((o: Ordinal) => Ordinal[])
@@ -43,17 +44,19 @@ const getDefaultTuplicity = <Ordinal, T>(
   base: Mappable<T, Ordinal>
 ) =>
   base instanceof Array ? base.length : next instanceof Array ? next.length : 1
-const getFirstCases = <T>(iterator: IterableIterator<T>, n = 0) => {
+const getFirstCases = <T>(iterator: IterableIterator<T>, b = 1) => {
   let count = 0
   let firstCases = []
-  while (count < n) {
+  while (count < b) {
     firstCases = [...firstCases, iterator.next().value]
     count++
   }
-  return firstCases.reduce<Map<T, number>>(
-    (map, c, i) => map.set(c, i),
-    new Map()
-  )
+  debugger
+  return firstCases.reduce<Map<T, number>>((map, c, i) => {
+    debugger
+    map.set(c, i)
+    return map
+  }, new Map())
 }
 const getGetBaseCaseAndFirstCases = <T, Ordinal>(
   base: T[],
@@ -71,91 +74,50 @@ const getGetBaseCaseAndFirstCases = <T, Ordinal>(
   }
 }
 
-function* makeRangeIterator(start = 0, end = Infinity, step = 1) {
-  let iterationCount = 0
-  for (let i = start; i < end; i += step) {
-    iterationCount++
-    yield i
-  }
-  return iterationCount
-}
-
-function* makeOffsetIterator<T>(orderable: Orderable<T>, offset = 0) {
-  let iterationCount = 0
-  const iterator = toIterator(orderable)
-  let next = iterator.next()
-  while (!next.done) {
-    if (iterationCount >= offset) {
-      yield next.value as T
+const makeRangeGenerator = (start = 0, end = Infinity, step = 1) =>
+  function*() {
+    let iterationCount = 0
+    for (let i = start; i < end; i += step) {
+      iterationCount++
+      yield i
     }
-    next = iterator.next()
+    return iterationCount
   }
-}
-function* toIterator<T>(orderable: Orderable<T>, max = MaxIterability) {
-  let iterationCount = 0
-  const handleException = () => {
+
+const makeOffsetGenerator = <T>(generator: Gener<T>, offset = 0) =>
+  function*() {
+    let iterationCount = 0
+    const iterator = generator()
+    let next = iterator.next()
+    while (!next.done) {
+      debugger
+      if (iterationCount >= offset) {
+        yield next.value as T
+      }
+      next = iterator.next()
+    }
+  }
+
+const handleIterationException = (count, max) => {
+  if (count > max) {
+    debugger
     throw max === MaxIterability
       ? 'max iterability exceeded'
       : max === MaxBase
       ? 'max base cases exceeded'
       : 'generic iteration threshold exceeded message'
   }
-  if (typeof orderable === 'function') {
-    while (true) {
-      if (iterationCount > max) handleException()
-      iterationCount++
-      yield orderable(iterationCount) as T
-    }
-  } else if (getIsIterator(orderable)) {
-    for (const o of orderable) {
-      handleException()
-      iterationCount++
-      yield o
-    }
-  }
 }
 
 const getIsIterable = obj => Symbol.iterator in Object(obj)
 const getIsIterator = obj => getIsIterable(obj) && obj.next
-// const getExplicitBaseFromOrdering = <T, Ordinal>({
-//   base,
-//   ordering = makeRangeIterator(),
-//   offset = 0
-// }: {
-//   base: Mappable<T, Ordinal>
-//   ordering: Orderable<Ordinal>
-//   offset: number
-// }) => {
-//   if (base instanceof Array) return base
-//   let i = 0
-//   let _base = [] as T[]
-//   if (typeof ordering === 'function') {
-//   } else {
-//     for (let internalCase of ordering) {
-//       if (i > MaxIterability) {
-//         throw 'base case overflow'
-//       }
-//       let nextValue = access(base, internalCase)
-//       if (i === offset && nextValue === undefined) {
-//         throw 'no base cases for tail optimization'
-//       }
-//       if (i > offset && nextValue === undefined) {
-//         break
-//       }
-//       if (i >= offset) {
-//         _base = [..._base, nextValue]
-//       }
-//       i++
-//     }
-//     return _base
-//   }
-// }
 const _getBaseCaseResult = (
   recursiveCase,
   base,
   next,
   shouldAccumulate = false
 ) => {
+  debugger
   let currentCase = recursiveCase
   let nextCases
   let baseCaseResult = access(base, currentCase)
@@ -187,106 +149,10 @@ const DefaultNext = n => {
   // for now
 }
 
-// export
-// const _robo = <T, Ordinal = number>({
-//   base,
-//   memoize,
-//   ordering = makeRangeIterator() as any,
-//   next = DefaultNext,
-//   recurrence = DefaultRecurrence,
-//   tuplicity = getDefaultTuplicity<Ordinal, T>(next, base),
-//   offset = 0,
-//   optimizeRuntime = false
-// }: // = getIsIterable(base) ? makeOffsetIterator(makeRangeIterator(), offset) : undefined // iterable or function
-// {
-//   base: Mappable<T, Ordinal>
-//   ordering?: Orderable<Ordinal>
-//   next?: Nextable<Ordinal>
-//   recurrence?: (recursiveCases: T[], ordinals?: Ordinal[]) => T
-//   tuplicity?: number
-//   offset?: number
-//   memoize?:
-//     | ((o: Ordinal) => string | number)
-//     | ((o: any) => string | number)[]
-//     | true
-//   optimizeRuntime?: boolean
-// }) => (recursiveCase: Ordinal) => {
-//   const _next = getIteratedNextFunction(next, tuplicity)
-
-//   const isTailRecursive = recurrence === DefaultRecurrence
-//   if (isTailRecursive) {
-//     debugger
-//     return getBaseCaseResult(recursiveCase, base, _next)
-//   }
-//   const innerIterator = makeOffsetIterator<Ordinal>(ordering, offset)
-//   const shouldBeSinglePassOptimized = base instanceof Array
-
-//   if (shouldBeSinglePassOptimized) {
-//     const { getBaseCase, firstCases } = getGetBaseCaseAndFirstCases<T, Ordinal>(
-//       base as T[],
-//       innerIterator
-//     )
-//     const getIsTerminal = (currentCase: Ordinal) =>
-//       getBaseCase(currentCase) !== undefined
-//     if (getIsTerminal(recursiveCase)) {
-//       return getBaseCase(recursiveCase)
-//     }
-//     interface MetaOrdinal<T, Ordinal> {
-//       accs: T[]
-//       outerCase: Ordinal
-//       innerCases?: Ordinal[]
-//     }
-
-//     return _robo<T, MetaOrdinal<T, Ordinal>>({
-//       base: ({ accs, outerCase }) => {
-//         if (getIsTerminal(outerCase)) return accs.slice(-1)[0]
-//       },
-//       next: ({ accs, outerCase, innerCases }) => {
-//         const lastAccs = accs.slice(tuplicity === Infinity ? 0 : 1)
-//         const newAcc = recurrence(accs, innerCases)
-//         const lastCases = innerCases.slice(tuplicity === Infinity ? 0 : 1)
-//         const nextInnerCases = [...lastCases, innerIterator.next().value]
-//         return [
-//           {
-//             accs: [...(tuplicity === Infinity ? [newAcc] : lastAccs), newAcc],
-//             outerCase: _next(outerCase).slice(-1)[0],
-//             innerCases: nextInnerCases
-//           }
-//         ]
-//       }
-//     })({
-//       accs: getExplicitBaseFromOrdering({ base, ordering, offset }),
-//       innerCases: firstCases,
-//       outerCase: recursiveCase
-//     })
-//   }
-  // const shouldBeDoublePassOptimized =
-  //   !getIsSinglePassTailable && (!!ordering || getIsIterable(base))
-  // if (shouldBeDoublePassOptimized) {
-  //   // const accs = getBaseCaseResults(recursiveCase, base, _next)
-  //   // return roboList<T>(base)
-  // }
-}
-// export
-// const roboList = <Element, R>({
-//   base,
-//   optimizeRuntime,
-//   recurrence = DefaultRecurrence,
-//   tuplicity = base instanceof Array ? base.length : undefined,
-// }: {
-//   base: Mappable<R, Element>
-//   ordering?: Orderable<Element>
-//   recurrence?: (recursiveCases: R[], elements: Element[], indices: number[]) => R
-//   tuplicity?: number
-//   optimizeRuntime?: boolean
-// }) => (list: Element[]) =>
-//   robo<R, number>({
-//     base,
-//     recurrence: (r, o) => ,
-//     tuplicity,
-//   })(list.length - 1)
-const Has = (x, props, has: any[]) =>
+const HasIntersection = (x, props, has: any[]) =>
   props.every(f => (has.indexOf(f) === -1 && !f(x)) || f(x))
+// const HasUnion = (x, props, has: any[]) =>
+//   props.every(f => (has.indexOf(f) === -1 && !f(x)) || f(x))
 type BaseArray<T> = { base: T[] }
 const BaseArray = x => x.hasOwnProperty('base') && x.base instanceof Array
 type BaseFunction<T, Ordinal> = { base: (o: Ordinal) => T }
@@ -303,29 +169,44 @@ type Memoize<Ordinal> = {
     | ((o: any) => string | number)[]
     | true
 }
-type RoboRest<T, Ordinal> = {
-  recurrence?: (recursiveCases: T[], ordinals?: Ordinal[]) => T
+type Recurrence<T, Ordinal = number> = {
+  recurrence: (recursiveCases: T[], ordinals?: Ordinal[]) => T
+}
+
+type RoboRest = {
   tuplicity?: number
   offset?: number
 }
-type ImplicitLinear<T> = BaseArray<T> & RoboRest<T, number>
-const ImplicitLinear = x =>
-  Has(x, [BaseArray, BaseFunction, Ordering, Next], [BaseArray])
+
+type ImplicitLinear<T> = BaseArray<T> & Recurrence<T> & RoboRest
+
+const ImplicitLinear = <T>(x): x is ImplicitLinear<T> =>
+  HasIntersection(x, [BaseArray, BaseFunction, Ordering, Next], [BaseArray])
 // const ImplicitLinear = <T>(x: ImplicitLinear<T>) => x.hasOwnProperty('base')
 type ExplicitLinear<T, Ordinal> = BaseArray<T> &
   Ordering<Ordinal> &
   Next<Ordinal> &
-  RoboRest<T, Ordinal>
-const ExplicitLinear = x => x =>
-  Has(x, [BaseArray, BaseFunction, Ordering, Next], [BaseArray, Ordering, Next])
+  Recurrence<T, Ordinal> &
+  RoboRest
+const ExplicitLinear = <T, Ordinal = number>(
+  x
+): x is ExplicitLinear<T, Ordinal> =>
+  HasIntersection(
+    x,
+    [BaseArray, BaseFunction, Ordering, Next],
+    [BaseArray, Ordering, Next]
+  )
 
-type ExplicitIndefiniteLinear<T, Ordinal> = BaseFunction<T, Ordinal> &
+type ExplicitIndefiniteLinear<T, Ordinal = number> = BaseFunction<T, Ordinal> &
   Ordering<Ordinal> &
   Next<Ordinal> &
-  RoboRest<T, Ordinal>
+  Recurrence<T, Ordinal> &
+  RoboRest
 
-const ExplicitIndefiniteLinear = x =>
-  Has(
+const ExplicitIndefiniteLinear = <T, Ordinal = number>(
+  x
+): x is ExplicitIndefiniteLinear<T, Ordinal> =>
+  HasIntersection(
     x,
     [BaseArray, BaseFunction, Ordering, Next],
     [BaseFunction, Ordering, Next]
@@ -334,12 +215,35 @@ const ExplicitIndefiniteLinear = x =>
 type NonLinear<T, Ordinal> = BaseFunction<T, Ordinal> &
   Next<Ordinal> &
   Memoize<Ordinal> &
-  RoboRest<T, Ordinal>
-const NonLinear = x =>
-  Has(x, [BaseArray, BaseFunction, Ordering, Next], [BaseFunction, Next])
+  Recurrence<T, Ordinal> &
+  RoboRest
+
+const NonLinear = <T, Ordinal>(x): x is NonLinear<T, Ordinal> =>
+  HasIntersection(
+    x,
+    [BaseArray, BaseFunction, Ordering, Next],
+    [BaseFunction, Next]
+  )
 const getGetBaseCase = <T, Ordinal>(firstCases: Ordinal[], base: T[]) => (
   recursiveCase: Ordinal
 ) => base[firstCases.indexOf(recursiveCase)]
+
+type TailRecursive<T, Ordinal = number> = (
+  | BaseArray<T>
+  | BaseFunction<T, Ordinal>) &
+  Next<Ordinal> &
+  RoboRest
+
+const TailRecursive = <T, Ordinal>(x): x is TailRecursive<T, Ordinal> =>
+  HasIntersection(x, [BaseArray, BaseFunction, Ordering, Next], [
+    BaseArray,
+    Next
+  ]) ||
+  HasIntersection(
+    x,
+    [BaseArray, BaseFunction, Ordering, Next],
+    [BaseFunction, Next]
+  )
 const roboLinear = <T, Ordinal = number>({
   base,
   recurrence,
@@ -349,14 +253,19 @@ const roboLinear = <T, Ordinal = number>({
   next
 }: ExplicitLinear<T, Ordinal> &
   (Ordering<Ordinal> | Next<Ordinal>)) => recursiveCase => {
-  const innerIterator = toIterator(ordering)
+  debugger
+  const innerIterator = makeOffsetGenerator(ordering, offset)()
   const _next = getIteratedNextFunction(next, tuplicity)
-  const firstCases = getFirstCases<Ordinal>(toIterator(ordering), offset)
-  const getBaseCase = (recursiveCase: Ordinal) => firstCases.get(recursiveCase)
-  const getIsTerminal = (currentCase: Ordinal) => currentCase === recursiveCase
+  debugger
+  const firstCases = getFirstCases<Ordinal>(innerIterator, base.length)
+  debugger
+  const getBaseCase = (recursiveCase: Ordinal) =>
+    base[firstCases.get(recursiveCase)]
+  const getIsTerminal = (innerCase: Ordinal) =>
+    firstCases.get(innerCase) < base.length
   const caseIfBase = getBaseCase(recursiveCase)
   if (caseIfBase !== undefined) {
-    caseIfBase
+    return caseIfBase
   }
   interface MetaOrdinal<T, Ordinal> {
     accs: T[]
@@ -366,13 +275,15 @@ const roboLinear = <T, Ordinal = number>({
 
   return robo<T, MetaOrdinal<T, Ordinal>>({
     base: ({ accs, outerCase }) => {
+      debugger
       if (getIsTerminal(outerCase)) return accs.slice(-1)[0]
     },
     next: ({ accs, outerCase, innerCases }) => {
-      const lastAccs = accs.slice(tuplicity === Infinity ? 0 : 1)
-      const newAcc = recurrence(accs, innerCases)
+      debugger
       const lastCases = innerCases.slice(tuplicity === Infinity ? 0 : 1)
       const nextInnerCases = [...lastCases, innerIterator.next().value]
+      const lastAccs = accs.slice(tuplicity === Infinity ? 0 : 1)
+      const newAcc = recurrence(accs, nextInnerCases)
       return [
         {
           accs: [...(tuplicity === Infinity ? [newAcc] : lastAccs), newAcc],
@@ -393,23 +304,36 @@ const robo = <T, Ordinal = number>(
     | ExplicitLinear<T, Ordinal>
     | ExplicitIndefiniteLinear<T, Ordinal>
     | NonLinear<T, Ordinal>
+    | TailRecursive<T, Ordinal>
 ) => {
   debugger
+  if (TailRecursive(params)) {
+    const { base, next, tuplicity } = params
+    return recursiveCase =>
+      getBaseCaseResult(
+        recursiveCase,
+        base,
+        getIteratedNextFunction(next, tuplicity)
+      )
+  }
   if (ImplicitLinear(params)) {
-    const ordering = makeOffsetIterator(makeRangeIterator(), params.offset)
+    const ordering = makeOffsetGenerator(makeRangeGenerator(), params.offset)
+    debugger
     const next = getIteratedNextFunction(DefaultNext, params.tuplicity)
     return roboLinear<T>({
-      ...(params as ImplicitLinear<T>),
+      ...params,
       ordering,
       next
     })
   }
   if (ExplicitLinear(params)) {
-    return roboLinear<T, Ordinal>(params as ExplicitLinear<T, Ordinal>)
+    return roboLinear<T, Ordinal>(params)
   }
   if (ExplicitIndefiniteLinear(params)) {
+    debugger
   }
   if (NonLinear(params)) {
+    debugger
   }
 }
 
@@ -427,13 +351,18 @@ const getKbonacciSource = k => n => {
 const triFibonacciSource = getKbonacciSource(3)
 const quadFibonacciSource = getKbonacciSource(4)
 
-const fibonacci = robo<number, number>({
+const fibonacci = robo<number>({
   base: [0, 1],
-  next: [n => n - 1],
   recurrence: ([subcase0, subcase1]) => subcase0 + subcase1
 })
 
-const factorial = robo<number, number>({
+// const fibonacciCustom = robo<number>({
+//   base: [0, 1],
+//   ordering: makeRangeGenerator(),
+//   recurrence: ([subcase0, subcase1]) => subcase0 + subcase1
+// })
+
+const factorial = robo<number>({
   base: [1],
   recurrence: ([subcase], [n]) => n * subcase
 })
@@ -455,47 +384,11 @@ const explicitFibonacci = robo<number, number>({
   recurrence: ([subcase0, subcase1]) => subcase0 + subcase1
 })
 
-// const implicitExplicitFibonacci = robo<number, number>({
-//   base: [0, 1],
-//   next: [n => n - 1],
-//   recurrence: ([subcase0, subcase1]) => subcase0 + subcase1,
-// })
-
-// const explicitFactorial = robo<number, number>({
-//   base: [1],
-//   next: [n => n - 1],
-//   recurrence: ([x], [n]) => n * x,
-// })
-
 const numDerangements = robo<number, number>({
   base: [1, 0],
-  recurrence: ([subcase0, subcase1], [_, previous]) =>
+  recurrence: ([subcase0, subcase1], [previous]) =>
     previous * (subcase0 + subcase1)
 })
-
-// const explicitNumDerangements = robo<number, number>({
-//   base: [1, 0],
-//   next: [(n: number) => n - 1, (n: number) => n - 2],
-//   recurrence: ([subcase0, subcase1], [_, previous]) =>
-//     previous * (subcase0 + subcase1),
-// })
-
-// const subsets = <T>(l: T[]) =>
-//   roboList<T[][]>({
-//     base: [[[]]],
-//     recurrence: ([subsets], [el]) => [
-//       ...subsets,
-//       ...subsets.map(subset => [el, ...subset]),
-//     ],
-//   })(l)
-
-// const and = roboList({
-//   base: x => {
-//     if (!x) return false
-//   },
-//   recurrence: ([conjunction], [conjunct]) => conjunction && conjunct,
-// })
-
 interface Change {
   coins: number[]
   target: number

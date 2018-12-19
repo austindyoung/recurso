@@ -1,8 +1,25 @@
+var __rest = (this && this.__rest) || function (s, e) {
+    var t = {};
+    for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
+        t[p] = s[p];
+    if (s != null && typeof Object.getOwnPropertySymbols === "function")
+        for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) if (e.indexOf(p[i]) < 0)
+            t[p[i]] = s[p[i]];
+    return t;
+};
 const identity = x => x;
 const MaxIterability = 1000;
 const MaxBase = 100;
 const DefaultRecurrence = ([x], [c]) => c;
-const access = (source, argument) => typeof source === 'function' ? source(argument) : source[argument];
+const access = (source, argument) => {
+    if (typeof source === 'function') {
+        return source(argument);
+    }
+    if (source instanceof Array && typeof argument === 'number') {
+        return source[argument];
+    }
+    throw 'cannot index with non-numeric ordinal';
+};
 const getIteratedNextFunction = (next, tuplicity) => {
     return !(next instanceof Array)
         ? x => Array.from(new Array(tuplicity === Infinity
@@ -28,9 +45,7 @@ const getFirstCases = (iterator, b = 1) => {
         firstCases = [...firstCases, iterator.next().value];
         count++;
     }
-    debugger;
     return firstCases.reduce((map, c, i) => {
-        debugger;
         map.set(c, i);
         return map;
     }, new Map());
@@ -57,16 +72,15 @@ const makeOffsetGenerator = (generator, offset = 0) => function* () {
     const iterator = generator();
     let next = iterator.next();
     while (!next.done) {
-        debugger;
         if (iterationCount >= offset) {
             yield next.value;
         }
         next = iterator.next();
+        iterationCount++;
     }
 };
 const handleIterationException = (count, max) => {
     if (count > max) {
-        debugger;
         throw max === MaxIterability
             ? 'max iterability exceeded'
             : max === MaxBase
@@ -77,12 +91,11 @@ const handleIterationException = (count, max) => {
 const getIsIterable = obj => Symbol.iterator in Object(obj);
 const getIsIterator = obj => getIsIterable(obj) && obj.next;
 const _getBaseCaseResult = (recursiveCase, base, next, shouldAccumulate = false) => {
-    debugger;
     let currentCase = recursiveCase;
-    let nextCases;
+    let nextCases = next(currentCase);
     let baseCaseResult = access(base, currentCase);
     let numIterations = 0;
-    let accs;
+    let accs = [baseCaseResult];
     while (baseCaseResult === undefined && numIterations < MaxIterability) {
         numIterations += 1;
         nextCases = next(currentCase);
@@ -102,6 +115,9 @@ const DefaultNext = n => {
     if (typeof n === 'number') {
         return [n - 1];
     }
+    if (n === undefined) {
+        throw 'generated function requires a parameter';
+    }
     throw 'must provide next function for non-numeric ordinals';
 };
 const HasIntersection = (x, props, has) => props.every(f => (has.indexOf(f) === -1 && !f(x)) || f(x));
@@ -120,13 +136,41 @@ const TailRecursive = (x) => HasIntersection(x, [BaseArray, BaseFunction, Orderi
     Next
 ]) ||
     HasIntersection(x, [BaseArray, BaseFunction, Ordering, Next], [BaseFunction, Next]);
+const postorderTraversal = (root, base, next) => {
+    if (base(root))
+        return [];
+    const stack = [];
+    const result = [];
+    stack.push(root);
+    while (stack.length !== 0) {
+        const pointer = stack.pop();
+        result.unshift(pointer);
+        next(pointer).forEach(child => {
+            stack.push(child);
+        });
+    }
+    return result;
+};
+const robo = (params) => {
+    if (TailRecursive(params)) {
+        const { base, next, tuplicity } = params;
+        const generatedFunction = (recursiveCase) => getBaseCaseResult(recursiveCase, base, getIteratedNextFunction(next, tuplicity));
+        return generatedFunction;
+    }
+    if (ImplicitLinear(params)) {
+        const ordering = makeOffsetGenerator(makeRangeGenerator(), params.offset);
+        const next = getIteratedNextFunction(DefaultNext, params.tuplicity);
+        return roboLinear(Object.assign({}, params, { ordering,
+            next }));
+    }
+    else {
+        return roboLinear(params);
+    }
+};
 const roboLinear = ({ base, recurrence, ordering, tuplicity, offset, next }) => recursiveCase => {
-    debugger;
     const innerIterator = makeOffsetGenerator(ordering, offset)();
     const _next = getIteratedNextFunction(next, tuplicity);
-    debugger;
     const firstCases = getFirstCases(innerIterator, base.length);
-    debugger;
     const getBaseCase = (recursiveCase) => base[firstCases.get(recursiveCase)];
     const getIsTerminal = (innerCase) => firstCases.get(innerCase) < base.length;
     const caseIfBase = getBaseCase(recursiveCase);
@@ -135,19 +179,18 @@ const roboLinear = ({ base, recurrence, ordering, tuplicity, offset, next }) => 
     }
     return robo({
         base: ({ accs, outerCase }) => {
-            debugger;
             if (getIsTerminal(outerCase))
                 return accs.slice(-1)[0];
         },
         next: ({ accs, outerCase, innerCases }) => {
-            debugger;
             const lastCases = innerCases.slice(tuplicity === Infinity ? 0 : 1);
             const nextInnerCases = [...lastCases, innerIterator.next().value];
             const lastAccs = accs.slice(tuplicity === Infinity ? 0 : 1);
             const newAcc = recurrence(accs, nextInnerCases);
+            const nextAccs = [...lastAccs, newAcc];
             return [
                 {
-                    accs: [...(tuplicity === Infinity ? [newAcc] : lastAccs), newAcc],
+                    accs: nextAccs,
                     outerCase: _next(outerCase).slice(-1)[0],
                     innerCases: nextInnerCases
                 }
@@ -159,28 +202,10 @@ const roboLinear = ({ base, recurrence, ordering, tuplicity, offset, next }) => 
         outerCase: recursiveCase
     });
 };
-const robo = (params) => {
-    debugger;
-    if (TailRecursive(params)) {
-        const { base, next, tuplicity } = params;
-        return recursiveCase => getBaseCaseResult(recursiveCase, base, getIteratedNextFunction(next, tuplicity));
-    }
-    if (ImplicitLinear(params)) {
-        const ordering = makeOffsetGenerator(makeRangeGenerator(), params.offset);
-        debugger;
-        const next = getIteratedNextFunction(DefaultNext, params.tuplicity);
-        return roboLinear(Object.assign({}, params, { ordering,
-            next }));
-    }
-    if (ExplicitLinear(params)) {
-        return roboLinear(params);
-    }
-    if (ExplicitIndefiniteLinear(params)) {
-        debugger;
-    }
-    if (NonLinear(params)) {
-        debugger;
-    }
+const roboIndefiniteLinear = (params) => { };
+const roboList = (_a) => {
+    var { base, recurrence } = _a, rest = __rest(_a, ["base", "recurrence"]);
+    return (list) => robo(Object.assign({ base, recurrence: (cs, is) => recurrence(cs, is.map(i => [undefined, ...list][i])) }, rest))(list.length);
 };
 const getKbonacciSource = k => n => {
     if (n < k)
@@ -199,30 +224,302 @@ const factorial = robo({
     base: [1],
     recurrence: ([subcase], [n]) => n * subcase
 });
-const sum = arr => arr.reduce((sumAcc, c) => sumAcc + c, 0);
+const numDerangements = robo({
+    base: [1, 0],
+    recurrence: ([subcase0, subcase1], [previous]) => previous * (subcase0 + subcase1)
+});
+const subsets = roboList({
+    base: [[[]]],
+    recurrence: ([subsets], [element]) => [
+        ...subsets,
+        ...subsets.map(subset => [...subset, element])
+    ]
+});
+const subsetsSource = l => l.reduce((subsets, element) => [
+    ...subsets,
+    ...subsets.map(subset => [...subset, element])
+], [[]]);
+const powerOfTwo = robo({
+    base: [1],
+    tuplicity: Infinity,
+    recurrence: cases => sum(cases)
+});
+const fibonacciWithOrdering = robo({
+    base: [0, 1],
+    ordering: makeRangeGenerator(),
+    recurrence: ([subcase0, subcase1]) => subcase0 + subcase1
+});
+const fibonacciIndefinite = robo({
+    base: n => {
+        if (n <= 0)
+            return n;
+    },
+    next: n => [n - 2, n - 1],
+    recurrence: ([subcase0, subcase1]) => subcase0 + subcase1
+});
+const fibonacciIndefiniteWithOrdering = robo({
+    base: n => {
+        if (n <= 0)
+            return n;
+    },
+    next: n => [n - 2, n - 1],
+    ordering: makeRangeGenerator(),
+    recurrence: ([subcase0, subcase1]) => subcase0 + subcase1
+});
+const fibonacciIndefiniteSpaceOptimization = robo({
+    base: n => {
+        if (n <= 0)
+            return n;
+    },
+    next: n => [n - 2, n - 1],
+    recurrence: ([subcase0, subcase1]) => subcase0 + subcase1
+});
+const fibonacciIndefiniteTimeOptimization = robo({
+    base: n => {
+        if (n <= 0)
+            return n;
+    },
+    next: n => [n - 2, n - 1],
+    recurrence: ([subcase0, subcase1]) => subcase0 + subcase1
+});
+const fibonacciIndefiniteWithOrderingSpaceOptimization = robo({
+    base: n => {
+        if (n <= 0)
+            return n;
+    },
+    next: n => [n - 2, n - 1],
+    ordering: makeRangeGenerator(),
+    recurrence: ([subcase0, subcase1]) => subcase0 + subcase1
+});
+const fibonacciIndefiniteWithOrderingTimeOptimization = robo({
+    base: n => {
+        if (n <= 0)
+            return n;
+    },
+    next: n => [n - 2, n - 1],
+    ordering: makeRangeGenerator(),
+    recurrence: ([subcase0, subcase1]) => subcase0 + subcase1
+});
+const sumList = roboList({
+    base: [0],
+    recurrence: ([subcase], [n]) => n + subcase
+});
+const factorialWithOrdering = robo({
+    base: [1],
+    ordering: makeRangeGenerator(),
+    recurrence: ([subcase], [n]) => n * subcase
+});
+const factorialIndefinite = robo({
+    base: n => {
+        if (n === 0)
+            return 1;
+    },
+    next: n => [n - 1],
+    recurrence: ([subcase], [n]) => n * subcase
+});
+const factorialIndefiniteWithOrdering = robo({
+    base: n => {
+        if (n === 0)
+            return 1;
+    },
+    next: n => [n - 1],
+    ordering: makeRangeGenerator(),
+    recurrence: ([subcase], [n]) => n * subcase
+});
+const factorialIndefiniteSpaceOptimization = robo({
+    base: n => {
+        if (n === 0)
+            return 1;
+    },
+    next: n => [n - 1],
+    recurrence: ([subcase], [n]) => n * subcase
+});
+const factorialIndefiniteTimeOptimization = robo({
+    base: n => {
+        if (n === 0)
+            return 1;
+    },
+    next: n => [n - 1],
+    recurrence: ([subcase], [n]) => n * subcase
+});
+const factorialIndefiniteWithOrderingSpaceOptimization = robo({
+    base: n => {
+        if (n === 0)
+            return 1;
+    },
+    next: n => [n - 1],
+    ordering: makeRangeGenerator(),
+    recurrence: ([subcase], [n]) => n * subcase
+});
+const factorialIndefiniteWithOrderingTimeOptimization = robo({
+    base: n => {
+        if (n === 0)
+            return 1;
+    },
+    next: n => [n - 1],
+    ordering: makeRangeGenerator(),
+    recurrence: ([subcase], [n]) => n * subcase
+});
+const factorialOffset = robo({
+    base: [1],
+    ordering: makeOffsetGenerator(makeRangeGenerator(), 5),
+    recurrence: ([subcase], [n]) => n * subcase
+});
+const sum = (arr) => arr.reduce((sumAcc, c) => sumAcc + c, 0);
 const getKbonacci = k => robo({
     base: [...new Array(k)].map((_, i) => i),
     recurrence: sum
 });
+const getKbonacciWithOrdering = k => robo({
+    base: [...new Array(k)].map((_, i) => i),
+    ordering: makeRangeGenerator(),
+    recurrence: sum
+});
+const getKbonacciIndefinite = k => robo({
+    base: n => {
+        if (n <= k)
+            return n;
+    },
+    next: n => [n - 1],
+    recurrence: sum
+});
+const getKbonacciIndefiniteWithOrdering = k => robo({
+    base: n => {
+        if (n <= k)
+            return n;
+    },
+    ordering: makeRangeGenerator(),
+    next: n => [n - 1],
+    recurrence: sum
+});
+const getKbonacciIndefiniteSpaceOptimization = k => robo({
+    base: n => {
+        if (n <= k)
+            return n;
+    },
+    next: n => [n - 1],
+    recurrence: sum
+});
+const getKbonacciIndefiniteTimeOptimization = k => robo({
+    base: n => {
+        if (n <= k)
+            return n;
+    },
+    next: n => [n - 1],
+    recurrence: sum
+});
+const getKbonacciIndefiniteWithOrderingSpaceOptimization = k => robo({
+    base: n => {
+        if (n <= k)
+            return n;
+    },
+    ordering: makeRangeGenerator(),
+    next: n => [n - 1],
+    recurrence: sum
+});
+const getKbonacciIndefiniteWithOrderingTimeOptimization = k => robo({
+    base: n => {
+        if (n <= k)
+            return n;
+    },
+    ordering: makeRangeGenerator(),
+    next: n => [n - 1],
+    recurrence: sum
+});
 const triFibonacci = getKbonacci(3);
 const quadFibonacci = getKbonacci(4);
+const triFibonacciIndefinite = getKbonacciIndefinite(3);
+const quadFibonacciIndefinite = getKbonacciIndefinite(4);
+const triFibonacciIndefiniteWithOrdering = getKbonacciIndefiniteWithOrdering(3);
+const quadFibonacciIndefiniteWithOrdering = getKbonacciIndefiniteWithOrdering(4);
+const triFibonacciIndefiniteWithOrderingSpaceOptimization = getKbonacciIndefiniteWithOrderingSpaceOptimization(3);
+const quadFibonacciIndefiniteWithOrderingTimeOptimization = getKbonacciIndefiniteWithOrderingTimeOptimization(4);
 const explicitFibonacci = robo({
     base: [0, 1],
     next: [n => n - 2, n => n - 1],
     recurrence: ([subcase0, subcase1]) => subcase0 + subcase1
 });
-const numDerangements = robo({
+const numDerangementsList = roboList({
     base: [1, 0],
     recurrence: ([subcase0, subcase1], [previous]) => previous * (subcase0 + subcase1)
 });
-const makeChange = (coins, target) => robo({
+const numDerangementsWithOrdering = robo({
+    base: [1, 0],
+    ordering: makeRangeGenerator(),
+    recurrence: ([subcase0, subcase1], [previous]) => previous * (subcase0 + subcase1)
+});
+const numDerangementsIndefinite = robo({
+    base: n => {
+        if (n === 0)
+            return 1;
+        if (n === 1)
+            return 0;
+    },
+    next: n => [n - 1],
+    recurrence: ([subcase0, subcase1], [previous]) => previous * (subcase0 + subcase1)
+});
+const numDerangementsWithOrderingIndefinite = robo({
+    base: n => {
+        if (n === 0)
+            return 1;
+        if (n === 1)
+            return 0;
+    },
+    next: n => [n - 1],
+    ordering: makeRangeGenerator(),
+    recurrence: ([subcase0, subcase1], [previous]) => previous * (subcase0 + subcase1)
+});
+const numDerangementsWithOrderingIndefiniteSpaceOptimization = robo({
+    base: n => {
+        if (n === 0)
+            return 1;
+        if (n === 1)
+            return 0;
+    },
+    next: n => [n - 1],
+    ordering: makeRangeGenerator(),
+    recurrence: ([subcase0, subcase1], [previous]) => previous * (subcase0 + subcase1)
+});
+const numDerangementsWithOrderingIndefiniteTimeOptimization = robo({
+    base: n => {
+        if (n === 0)
+            return 1;
+        if (n === 1)
+            return 0;
+    },
+    next: n => [n - 1],
+    ordering: makeRangeGenerator(),
+    recurrence: ([subcase0, subcase1], [previous]) => previous * (subcase0 + subcase1)
+});
+const numDerangementsIndefiniteSpaceOptimization = robo({
+    base: n => {
+        if (n === 0)
+            return 1;
+        if (n === 1)
+            return 0;
+    },
+    next: n => [n - 1],
+    recurrence: ([subcase0, subcase1], [previous]) => previous * (subcase0 + subcase1)
+});
+const numDerangementsIndefiniteTimeOptimization = robo({
+    base: n => {
+        if (n === 0)
+            return 1;
+        if (n === 1)
+            return 0;
+    },
+    next: n => [n - 1],
+    ordering: makeRangeGenerator(),
+    recurrence: ([subcase0, subcase1], [previous]) => previous * (subcase0 + subcase1)
+});
+const makeChange = robo({
     base: ({ coins, target }) => {
         if (!coins.length)
             return 0;
-        if (!target)
-            return 1;
         if (target && !coins.length)
             return 0;
+        if (!target)
+            return 1;
     },
     next: ({ coins, target }) => [
         { coins, target: target - coins[0] },
@@ -230,7 +527,18 @@ const makeChange = (coins, target) => robo({
     ],
     recurrence: sum,
     memoize: [coins => coins.length, target => target]
-})({ coins, target });
+});
+const binomialCoefficient = robo({
+    base: ({ n, k }) => {
+        if (k === 0)
+            return 1;
+        if (n === k)
+            return 1;
+    },
+    next: ({ n, k }) => [{ n: n - 1, k: k - 1 }, { n, k: k - 1 }],
+    recurrence: sum,
+    memoize: [identity, identity]
+});
 const binarySearch = (arr, target) => robo({
     base: ({ subArr, displacement }) => {
         if (!subArr.length)
@@ -308,18 +616,93 @@ const test = () => {
             expect(numDerangements(5)).toBe(44);
         });
     });
-    describe('single pass optimization with custom ordering works for', function () { });
-    describe('double pass optimization works for', function () { });
-    describe('double pass optimization with custom ordering works for', function () { });
-    describe('double pass time optimization works for', function () { });
-    describe('double pass time optimization with custom ordering works for', function () { });
-    describe('double pass space optimization works for', function () { });
-    describe('double pass space optimization with custom ordering works for', function () { });
-    describe('list recursion works for', function () { });
-    describe('list recursion with short circuiting works for', function () { });
-    describe('divide-and-conqceur works for', function () { });
-    describe('divide-and-conqceur implicit single-dimensional memoization works for', function () { });
-    describe('divide-and-conqceur explicit multi-dimensional memoization works for', function () { });
+    describe('List recursion works for', function () {
+        describe('subsets', function () {
+            it('base cases', function () {
+                expect(subsets([])).toEqual([[]]);
+            });
+            it('rest', function () {
+                expect(subsets([1])).toEqual(subsetsSource([1]));
+                expect(subsets([1, 2])).toEqual(subsetsSource([1, 2]));
+                expect(subsets([1, 2, 3])).toEqual(subsetsSource([1, 2, 3]));
+                expect(subsets([1, 2, 3, 4])).toEqual(subsetsSource([1, 2, 3, 4]));
+                expect(subsets([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17])).toEqual(subsetsSource([
+                    1,
+                    2,
+                    3,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8,
+                    9,
+                    10,
+                    11,
+                    12,
+                    13,
+                    14,
+                    15,
+                    16,
+                    17
+                ]));
+            });
+        });
+    });
+    describe('List recursion works for', function () {
+        describe('subsets', function () {
+            it('base cases', function () {
+                expect(subsets([])).toEqual([[]]);
+            });
+            it('rest', function () {
+                expect(subsets([1])).toEqual(subsetsSource([1]));
+                expect(subsets([1, 2])).toEqual(subsetsSource([1, 2]));
+                expect(subsets([1, 2, 3])).toEqual(subsetsSource([1, 2, 3]));
+                expect(subsets([1, 2, 3, 4])).toEqual(subsetsSource([1, 2, 3, 4]));
+                expect(subsets([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17])).toEqual(subsetsSource([
+                    1,
+                    2,
+                    3,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8,
+                    9,
+                    10,
+                    11,
+                    12,
+                    13,
+                    14,
+                    15,
+                    16,
+                    17
+                ]));
+            });
+            describe('power of two', function () {
+                it('base cases', function () {
+                    expect(powerOfTwo(0)).toBe(1);
+                });
+                it('rest', function () {
+                    expect(powerOfTwo(1)).toBe(2);
+                    expect(powerOfTwo(2)).toBe(4);
+                    expect(powerOfTwo(3)).toBe(8);
+                    expect(powerOfTwo(4)).toBe(16);
+                });
+            });
+        });
+        describe('single pass optimization with custom ordering works for', function () { });
+        describe('double pass optimization works for', function () { });
+        describe('double pass optimization with custom ordering works for', function () { });
+        describe('double pass time optimization works for', function () { });
+        describe('double pass time optimization with custom ordering works for', function () { });
+        describe('double pass space optimization works for', function () { });
+        describe('double pass space optimization with custom ordering works for', function () { });
+        describe('list recursion works for', function () { });
+        describe('list recursion with short circuiting works for', function () { });
+        describe('divide-and-conqceur works for', function () { });
+        describe('divide-and-conqceur implicit single-dimensional memoization works for', function () { });
+        describe('divide-and-conqceur explicit multi-dimensional memoization works for', function () { });
+    });
 };
 test();
 //# sourceMappingURL=robo.js.map

@@ -169,6 +169,8 @@ const DefaultNext = n => {
 
 const HasIntersection = (x, props, has: any[]) =>
   props.every(f => (has.indexOf(f) === -1 && !f(x)) || f(x))
+const DoesntHave = (x, doesntHave: any[]) => doesntHave.every(f => !f(x))
+
 // const HasUnion = (x, props, has: any[]) =>
 //   props.every(f => (has.indexOf(f) === -1 && !f(x)) || f(x))
 type BaseArray<T> = { base: T[] }
@@ -180,7 +182,6 @@ type Ordering<Ordinal> = { ordering: Orderable<Ordinal> }
 const Ordering = x => x.hasOwnProperty('ordering')
 type Next<Ordinal> = { next: Nextable<Ordinal> }
 const Next = x => x.hasOwnProperty('next')
-const Props = [BaseArray, BaseFunction, Ordering, Next]
 type Memoize<Ordinal> = {
   memoize?:
     | ((o: Ordinal) => string | number)
@@ -190,6 +191,8 @@ type Memoize<Ordinal> = {
 type Recurrence<T, Ordinal = number> = {
   recurrence: (recursiveCases: T[], ordinals?: Ordinal[]) => T
 }
+const Recurrence = x => x.hasOwnProperty('recurrence')
+const Props = [BaseArray, BaseFunction, Ordering, Next, Recurrence]
 
 type RoboRest = {
   tuplicity?: number
@@ -199,7 +202,7 @@ type RoboRest = {
 type ImplicitLinear<T> = BaseArray<T> & Recurrence<T> & RoboRest
 
 const ImplicitLinear = <T>(x): x is ImplicitLinear<T> =>
-  HasIntersection(x, [BaseArray, BaseFunction, Ordering, Next], [BaseArray])
+  HasIntersection(x, Props, [BaseArray])
 // const ImplicitLinear = <T>(x: ImplicitLinear<T>) => x.hasOwnProperty('base')
 type ExplicitLinear<T, Ordinal> = BaseArray<T> &
   Ordering<Ordinal> &
@@ -209,11 +212,7 @@ type ExplicitLinear<T, Ordinal> = BaseArray<T> &
 const ExplicitLinear = <T, Ordinal = number>(
   x
 ): x is ExplicitLinear<T, Ordinal> =>
-  HasIntersection(
-    x,
-    [BaseArray, BaseFunction, Ordering, Next],
-    [BaseArray, Ordering, Next]
-  )
+  HasIntersection(x, Props, [BaseArray, Ordering, Next])
 
 // type ExplicitIndefiniteLinear<T, Ordinal = number> = BaseFunction<T, Ordinal> &
 //   Ordering<Ordinal> &
@@ -227,7 +226,7 @@ const ExplicitLinear = <T, Ordinal = number>(
 // ): x is ExplicitIndefiniteLinear<T, Ordinal> =>
 //   HasIntersection(
 //     x,
-//     [BaseArray, BaseFunction, Ordering, Next],
+//     Props,
 //     [BaseFunction, Ordering, Next]
 //   )
 
@@ -240,7 +239,7 @@ type NonLinear<T, Ordinal> = BaseFunction<T, Ordinal> &
 const NonLinear = <T, Ordinal>(x): x is NonLinear<T, Ordinal> =>
   HasIntersection(
     x,
-    [BaseArray, BaseFunction, Ordering, Next],
+    [BaseArray, BaseFunction, Ordering, Next, Recurrence],
     [BaseFunction, Next]
   )
 const getGetBaseCase = <T, Ordinal>(firstCases: Ordinal[], base: T[]) => (
@@ -254,16 +253,9 @@ type TailRecursive<T, Ordinal = number> = (
   RoboRest
 
 const TailRecursive = <T, Ordinal>(x): x is TailRecursive<T, Ordinal> =>
-  HasIntersection(
-    x,
-    [BaseArray, BaseFunction, Ordering, Next],
-    [BaseArray, Next]
-  ) ||
-  HasIntersection(
-    x,
-    [BaseArray, BaseFunction, Ordering, Next],
-    [BaseFunction, Next]
-  )
+  HasIntersection(x, Props, [BaseArray, Next]) ||
+  (HasIntersection(x, Props, [BaseFunction, Next]) &&
+    DoesntHave(x, [Recurrence]))
 
 const postorderTraversal = <Ordinal>(root: Ordinal, base, next) => {
   if (base(root)) return []
@@ -288,7 +280,8 @@ const robo = <T, Ordinal = number>(
     | NonLinear<T, Ordinal>
     | TailRecursive<T, Ordinal>
 ): ((recursiveCase: Ordinal) => T | T[][Ordinal & number]) => {
-  if (TailRecursive(params)) {
+  debugger
+  if (TailRecursive<T, Ordinal>(params)) {
     const { base, next, tuplicity } = params
     const generatedFunction = (recursiveCase: Ordinal) =>
       getBaseCaseResult<T, Ordinal>(
@@ -298,7 +291,10 @@ const robo = <T, Ordinal = number>(
       )
     return generatedFunction
   }
-  if (ImplicitLinear(params)) {
+  if (NonLinear(params)) {
+    // return evaluate(params)
+  }
+  if (ImplicitLinear<T>(params)) {
     const ordering = makeOffsetGenerator(makeRangeGenerator(), params.offset)
     const next = getIteratedNextFunction(DefaultNext, params.tuplicity)
     return roboLinear<T, number>({
@@ -307,15 +303,11 @@ const robo = <T, Ordinal = number>(
       next
     })
   }
-  if (ExplicitLinear(params)) {
+  if (ExplicitLinear<T, Ordinal>(params)) {
+    debugger
     return roboLinear<T, Ordinal>(params)
   }
-  // if (ExplicitIndefiniteLinear(params)) {
-  //   debugger
-  // }
-  if (NonLinear(params)) {
-    debugger
-  }
+
   throw 'unable to generate function from arguments'
 }
 
@@ -766,7 +758,7 @@ const makeChange = robo<number, Change>({
     { coins: coins.slice(1), target }
   ],
   recurrence: sum,
-  memoize: [coins => coins.length, target => target]
+  memoize: ({ coins, target }) => [coins.length, target]
 })
 
 type Choose = {
@@ -781,7 +773,7 @@ const binomialCoefficient = robo<number, Choose>({
   },
   next: ({ n, k }) => [{ n: n - 1, k: k - 1 }, { n, k: k - 1 }],
   recurrence: sum,
-  memoize: [identity, identity]
+  memoize: ({ n, k }) => [n, k]
 })
 
 interface BinarySearch<T> {

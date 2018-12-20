@@ -27,6 +27,7 @@ declare const getBaseCaseResult: <T, Ordinal>(recursiveCase: Ordinal, base: Mapp
 declare const getBaseCaseResults: <T, Ordinal>(recursiveCase: Ordinal, base: Mappable<T, Ordinal>, next: (o: Ordinal) => Ordinal[]) => (T | T[][Ordinal & number])[];
 declare const DefaultNext: (n: any) => any;
 declare const HasIntersection: (x: any, props: any, has: any[]) => any;
+declare const DoesntHave: (x: any, doesntHave: any[]) => boolean;
 declare type BaseArray<T> = {
     base: T[];
 };
@@ -43,13 +44,14 @@ declare type Next<Ordinal> = {
     next: Nextable<Ordinal>;
 };
 declare const Next: (x: any) => any;
-declare const Props: ((x: any) => any)[];
 declare type Memoize<Ordinal> = {
     memoize?: ((o: Ordinal) => string | number) | ((o: any) => string | number)[] | true;
 };
 declare type Recurrence<T, Ordinal = number> = {
     recurrence: (recursiveCases: T[], ordinals?: Ordinal[]) => T;
 };
+declare const Recurrence: (x: any) => any;
+declare const Props: ((x: any) => any)[];
 declare type RoboRest = {
     tuplicity?: number;
     offset?: number;
@@ -58,19 +60,14 @@ declare type ImplicitLinear<T> = BaseArray<T> & Recurrence<T> & RoboRest;
 declare const ImplicitLinear: <T>(x: any) => x is ImplicitLinear<T>;
 declare type ExplicitLinear<T, Ordinal> = BaseArray<T> & Ordering<Ordinal> & Next<Ordinal> & Recurrence<T, Ordinal> & RoboRest;
 declare const ExplicitLinear: <T, Ordinal = number>(x: any) => x is ExplicitLinear<T, Ordinal>;
-declare type ExplicitIndefiniteLinear<T, Ordinal = number> = BaseFunction<T, Ordinal> & Ordering<Ordinal> & Next<Ordinal> & Recurrence<T, Ordinal> & {
-    optimizeSpace: boolean;
-} & RoboRest;
-declare const ExplicitIndefiniteLinear: <T, Ordinal = number>(x: any) => x is ExplicitIndefiniteLinear<T, Ordinal>;
 declare type NonLinear<T, Ordinal> = BaseFunction<T, Ordinal> & Next<Ordinal> & Memoize<Ordinal> & Recurrence<T, Ordinal> & RoboRest;
 declare const NonLinear: <T, Ordinal>(x: any) => x is NonLinear<T, Ordinal>;
 declare const getGetBaseCase: <T, Ordinal>(firstCases: Ordinal[], base: T[]) => (recursiveCase: Ordinal) => T;
 declare type TailRecursive<T, Ordinal = number> = (BaseArray<T> | BaseFunction<T, Ordinal>) & Next<Ordinal> & RoboRest;
 declare const TailRecursive: <T, Ordinal>(x: any) => x is TailRecursive<T, Ordinal>;
 declare const postorderTraversal: <Ordinal>(root: Ordinal, base: any, next: any) => any[];
-declare const robo: <T, Ordinal = number>(params: ImplicitLinear<T> | ExplicitLinear<T, Ordinal> | ExplicitIndefiniteLinear<T, Ordinal> | NonLinear<T, Ordinal> | (BaseArray<T> & Next<Ordinal> & RoboRest) | (BaseFunction<T, Ordinal> & Next<Ordinal> & RoboRest)) => (recursiveCase: Ordinal) => T | T[][Ordinal & number];
+declare const robo: <T, Ordinal = number>(params: ImplicitLinear<T> | ExplicitLinear<T, Ordinal> | NonLinear<T, Ordinal> | (BaseArray<T> & Next<Ordinal> & RoboRest) | (BaseFunction<T, Ordinal> & Next<Ordinal> & RoboRest)) => (recursiveCase: Ordinal) => T | T[][Ordinal & number];
 declare const roboLinear: <T, Ordinal = number>({ base, recurrence, ordering, tuplicity, offset, next }: ExplicitLinear<T, Ordinal>) => (recursiveCase: any) => T;
-declare const roboIndefiniteLinear: <T, Ordinal>(params: ExplicitIndefiniteLinear<T, Ordinal>) => void;
 declare const roboList: <T, Element_1 = any>({ base, recurrence, ...rest }: BaseArray<T> & Recurrence<T, Element_1> & RoboRest) => (list: Element_1[]) => T;
 declare let it: any;
 declare let expect: any;

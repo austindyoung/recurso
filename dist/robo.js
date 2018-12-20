@@ -121,21 +121,20 @@ const DefaultNext = n => {
     throw 'must provide next function for non-numeric ordinals';
 };
 const HasIntersection = (x, props, has) => props.every(f => (has.indexOf(f) === -1 && !f(x)) || f(x));
+const DoesntHave = (x, doesntHave) => doesntHave.every(f => !f(x));
 const BaseArray = x => x.hasOwnProperty('base') && x.base instanceof Array;
 const BaseFunction = x => x.hasOwnProperty('base') && typeof x.base === 'function';
 const Ordering = x => x.hasOwnProperty('ordering');
 const Next = x => x.hasOwnProperty('next');
-const Props = [BaseArray, BaseFunction, Ordering, Next];
-const ImplicitLinear = (x) => HasIntersection(x, [BaseArray, BaseFunction, Ordering, Next], [BaseArray]);
-const ExplicitLinear = (x) => HasIntersection(x, [BaseArray, BaseFunction, Ordering, Next], [BaseArray, Ordering, Next]);
-const ExplicitIndefiniteLinear = (x) => HasIntersection(x, [BaseArray, BaseFunction, Ordering, Next], [BaseFunction, Ordering, Next]);
-const NonLinear = (x) => HasIntersection(x, [BaseArray, BaseFunction, Ordering, Next], [BaseFunction, Next]);
+const Recurrence = x => x.hasOwnProperty('recurrence');
+const Props = [BaseArray, BaseFunction, Ordering, Next, Recurrence];
+const ImplicitLinear = (x) => HasIntersection(x, Props, [BaseArray]);
+const ExplicitLinear = (x) => HasIntersection(x, Props, [BaseArray, Ordering, Next]);
+const NonLinear = (x) => HasIntersection(x, [BaseArray, BaseFunction, Ordering, Next, Recurrence], [BaseFunction, Next]);
 const getGetBaseCase = (firstCases, base) => (recursiveCase) => base[firstCases.indexOf(recursiveCase)];
-const TailRecursive = (x) => HasIntersection(x, [BaseArray, BaseFunction, Ordering, Next], [
-    BaseArray,
-    Next
-]) ||
-    HasIntersection(x, [BaseArray, BaseFunction, Ordering, Next], [BaseFunction, Next]);
+const TailRecursive = (x) => HasIntersection(x, Props, [BaseArray, Next]) ||
+    (HasIntersection(x, Props, [BaseFunction, Next]) &&
+        DoesntHave(x, [Recurrence]));
 const postorderTraversal = (root, base, next) => {
     if (base(root))
         return [];
@@ -152,6 +151,7 @@ const postorderTraversal = (root, base, next) => {
     return result;
 };
 const robo = (params) => {
+    debugger;
     if (TailRecursive(params)) {
         const { base, next, tuplicity } = params;
         const generatedFunction = (recursiveCase) => getBaseCaseResult(recursiveCase, base, getIteratedNextFunction(next, tuplicity));
@@ -163,9 +163,14 @@ const robo = (params) => {
         return roboLinear(Object.assign({}, params, { ordering,
             next }));
     }
-    else {
+    if (ExplicitLinear(params)) {
+        debugger;
         return roboLinear(params);
     }
+    if (NonLinear(params)) {
+        return 1;
+    }
+    throw 'unable to generate function from arguments';
 };
 const roboLinear = ({ base, recurrence, ordering, tuplicity, offset, next }) => recursiveCase => {
     const innerIterator = makeOffsetGenerator(ordering, offset)();
@@ -202,7 +207,6 @@ const roboLinear = ({ base, recurrence, ordering, tuplicity, offset, next }) => 
         outerCase: recursiveCase
     });
 };
-const roboIndefiniteLinear = (params) => { };
 const roboList = (_a) => {
     var { base, recurrence } = _a, rest = __rest(_a, ["base", "recurrence"]);
     return (list) => robo(Object.assign({ base, recurrence: (cs, is) => recurrence(cs, is.map(i => [undefined, ...list][i])) }, rest))(list.length);

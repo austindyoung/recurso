@@ -128,10 +128,10 @@ const _getBaseCaseResult = <T, Ordinal>(
   shouldAccumulate = false
 ) => {
   let currentCase = recursiveCase
-  let nextCases = next(currentCase)
+  let nextCases
   let baseCaseResult = access<T, Ordinal>(base, currentCase)
   let numIterations = 0
-  let accs = [baseCaseResult]
+  let accs
   while (baseCaseResult === undefined && numIterations < MaxIterability) {
     numIterations += 1
     nextCases = next(currentCase)
@@ -280,7 +280,6 @@ const robo = <T, Ordinal = number>(
     | NonLinear<T, Ordinal>
     | TailRecursive<T, Ordinal>
 ): ((recursiveCase: Ordinal) => T | T[][Ordinal & number]) => {
-  debugger
   if (TailRecursive<T, Ordinal>(params)) {
     const { base, next, tuplicity } = params
     const generatedFunction = (recursiveCase: Ordinal) =>
@@ -308,7 +307,7 @@ const robo = <T, Ordinal = number>(
     return roboLinear<T, Ordinal>(params)
   }
 
-  throw 'unable to generate function from arguments'
+  // throw 'unable to generate function from arguments'
 }
 
 const roboLinear = <T, Ordinal = number>({
@@ -373,7 +372,7 @@ const roboList = <T, Element = any>({
   robo<T, number>({
     base,
     recurrence: (cs, is) =>
-      recurrence(cs, is.map(i => [undefined, ...list][i])), // create special range
+      recurrence(cs, is.map(i => [undefined, ...list][i])), // todo: create special range
     ...rest
   })(list.length)
 
@@ -427,7 +426,7 @@ const subsetsSource = l =>
 const powerOfTwo = robo<number, number>({
   base: [1],
   tuplicity: Infinity,
-  recurrence: cases => sum(cases)
+  recurrence: cases => sum(cases) + 1
 })
 
 const fibonacciWithOrdering = robo<number>({

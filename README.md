@@ -205,10 +205,20 @@ const makeChange = robo<number, Change>({
 ##### Unbounded recurrence parameters
 
 ```
+// runtime: O(2 ^ n)
+// stack space O(n)
+const powerOfTwo = n =>
+  n ? sum([...new Array(n - 1)].map((_, i) => powerOfTwo(i))) + 1 : 1
+```
+
+```
+// runtime: O(n ^ 2)
+// stack space: O(1)
+// general space: O(n)
 const powerOfTwo = robo<number, number>({
   base: [1],
   tuplicity: Infinity,
-  recurrence: allPriorCases => sum(allPriorCases)
+  recurrence: cases => sum(cases) + 1
 })
 ```
 

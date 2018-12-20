@@ -21,10 +21,10 @@ declare const getIsIterable: (obj: any) => boolean;
 declare const getIsIterator: (obj: any) => any;
 declare const _getBaseCaseResult: <T, Ordinal>(recursiveCase: Ordinal, base: Mappable<T, Ordinal>, next: (o: Ordinal) => Ordinal[], shouldAccumulate?: boolean) => {
     baseCaseResult: T | T[][Ordinal & number];
-    accs: (T | T[][Ordinal & number])[];
+    accs: any;
 };
 declare const getBaseCaseResult: <T, Ordinal>(recursiveCase: Ordinal, base: Mappable<T, Ordinal>, next: (o: Ordinal) => Ordinal[]) => T | T[][Ordinal & number];
-declare const getBaseCaseResults: <T, Ordinal>(recursiveCase: Ordinal, base: Mappable<T, Ordinal>, next: (o: Ordinal) => Ordinal[]) => (T | T[][Ordinal & number])[];
+declare const getBaseCaseResults: <T, Ordinal>(recursiveCase: Ordinal, base: Mappable<T, Ordinal>, next: (o: Ordinal) => Ordinal[]) => any;
 declare const DefaultNext: (n: any) => any;
 declare const HasIntersection: (x: any, props: any, has: any[]) => any;
 declare const DoesntHave: (x: any, doesntHave: any[]) => boolean;

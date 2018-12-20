@@ -92,10 +92,10 @@ const getIsIterable = obj => Symbol.iterator in Object(obj);
 const getIsIterator = obj => getIsIterable(obj) && obj.next;
 const _getBaseCaseResult = (recursiveCase, base, next, shouldAccumulate = false) => {
     let currentCase = recursiveCase;
-    let nextCases = next(currentCase);
+    let nextCases;
     let baseCaseResult = access(base, currentCase);
     let numIterations = 0;
-    let accs = [baseCaseResult];
+    let accs;
     while (baseCaseResult === undefined && numIterations < MaxIterability) {
         numIterations += 1;
         nextCases = next(currentCase);
@@ -151,11 +151,12 @@ const postorderTraversal = (root, base, next) => {
     return result;
 };
 const robo = (params) => {
-    debugger;
     if (TailRecursive(params)) {
         const { base, next, tuplicity } = params;
         const generatedFunction = (recursiveCase) => getBaseCaseResult(recursiveCase, base, getIteratedNextFunction(next, tuplicity));
         return generatedFunction;
+    }
+    if (NonLinear(params)) {
     }
     if (ImplicitLinear(params)) {
         const ordering = makeOffsetGenerator(makeRangeGenerator(), params.offset);
@@ -167,10 +168,6 @@ const robo = (params) => {
         debugger;
         return roboLinear(params);
     }
-    if (NonLinear(params)) {
-        return 1;
-    }
-    throw 'unable to generate function from arguments';
 };
 const roboLinear = ({ base, recurrence, ordering, tuplicity, offset, next }) => recursiveCase => {
     const innerIterator = makeOffsetGenerator(ordering, offset)();
@@ -246,7 +243,7 @@ const subsetsSource = l => l.reduce((subsets, element) => [
 const powerOfTwo = robo({
     base: [1],
     tuplicity: Infinity,
-    recurrence: cases => sum(cases)
+    recurrence: cases => sum(cases) + 1
 });
 const fibonacciWithOrdering = robo({
     base: [0, 1],
@@ -530,7 +527,7 @@ const makeChange = robo({
         { coins: coins.slice(1), target }
     ],
     recurrence: sum,
-    memoize: [coins => coins.length, target => target]
+    memoize: ({ coins, target }) => [coins.length, target]
 });
 const binomialCoefficient = robo({
     base: ({ n, k }) => {
@@ -541,7 +538,7 @@ const binomialCoefficient = robo({
     },
     next: ({ n, k }) => [{ n: n - 1, k: k - 1 }, { n, k: k - 1 }],
     recurrence: sum,
-    memoize: [identity, identity]
+    memoize: ({ n, k }) => [n, k]
 });
 const binarySearch = (arr, target) => robo({
     base: ({ subArr, displacement }) => {

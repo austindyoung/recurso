@@ -207,6 +207,7 @@ const makeChange = robo<number, Change>({
 ```
 // runtime: O(2 ^ n)
 // stack space O(n)
+
 const powerOfTwo = n =>
   n ? sum([...new Array(n - 1)].map((_, i) => powerOfTwo(i))) + 1 : 1
 ```
@@ -215,6 +216,7 @@ const powerOfTwo = n =>
 // runtime: O(n ^ 2)
 // stack space: O(1)
 // general space: O(n)
+
 const powerOfTwo = robo<number, number>({
   base: [1],
   tuplicity: Infinity,

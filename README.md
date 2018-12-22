@@ -178,7 +178,7 @@ const subsets = roboList<number[][], number>({
 
 ### General recurrences, `next` and `base` functions, `memoize`
 
-##### Binomial coefficient: conventional
+##### Binomial coefficient: recursive
 
 ```
 robo: <T, Ordinal>({
@@ -186,7 +186,7 @@ robo: <T, Ordinal>({
   next: (o: Ordinal) => Ordinal[],
   recurrence: ((results: T[], cases?: Ordinal[]) => T)
   memoize: boolean | (o: Ordinal) => string | number
-}) => T`
+}) => T
 ```
 
 ```
@@ -212,31 +212,32 @@ const binomialCoefficient = robo<number, Choose>({
 ##### Make change
 
 ```
-
-// linear call call stack space, exponential runtime
-
+robo: <T, Ordinal>({
+  base: (o: Ordinal) => T,
+  next: (o: Ordinal) => Ordinal[],
+  recurrence: ((results: T[], cases?: Ordinal[]) => T)
+  memoize: boolean | (o: Ordinal) => string | number
+}) => T
 ```
 
 ```
-
-// constant call call stack space, O(coins.length \* target) runtime
 interface Change {
-coins: number[]
-target: number
+  coins: number[]
+  target: number
 }
 
 const makeChange = robo<number, Change>({
-base: ({ coins, target }) => {
-if (!coins.length) return 0
-if (target && !coins.length) return 0
-if (!target) return 1
-},
-next: ({ coins, target }) => [
-{ coins, target: target - coins[0] },
-{ coins: coins.slice(1), target }
-],
-recurrence: sum,
-memoize: ({ coins, target }) => [coins.length, target]
+  base: ({ coins, target }) => {
+    if (!coins.length) return 0
+    if (target && !coins.length) return 0
+    if (!target) return 1
+  },
+  next: ({ coins, target }) => [
+    { coins, target: target - coins[0] },
+    { coins: coins.slice(1), target }
+  ],
+  recurrence: sum,
+  memoize: ({ coins, target }) => [coins.length, target]
 })
 
 ```

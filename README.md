@@ -1,61 +1,69 @@
-# robo
+# robo.js
 
-Recursive Optimization through Bare Operation
+**Recursive Optimization through Bare Operation**
+
+- Eliminate recursive call stack consumption
+- Modularize and abstract recurrence-base defintion
+- Implicitly memoize
 
 ### First-order recurrences
 
-##### Factorial: conventional
+##### Factorial: non-tail recursive
 
 ```
-// non-tail recursive
-// call stack space: O(n)
-// runtime: O(n)
-
 const factorial = n =>
   n ? n * factorial(n - 1) : 1
-
 ```
 
-```
-// tail recursive
-// call stack space: O(n) (without TCO)
+- call stack space: _O(n)_
+- runtime: _O(n)_
 
+##### Factorial: non-tail recursive
+
+```
 const factorial = (n, acc = 1) =>
   n ? factorial(n - 1, n * acc) : acc
 ```
 
-##### Factorial: with robo
+- call stack space: _O(n)_ (without TCO)
+- runtime: _O(n)_
+
+---
+
+##### Factorial: with _robo_
+
+`robo: <T>({ base: T[] recurrence: ((results: T[], cases?: number[]) => T) }) => T`
 
 ```
-// call stack space: O(1)
-// general space: O(1)
-
 const factorial = robo<number>({
   base: [1],
   recurrence: ([subcase], [n]) => n * subcase
 })
 ```
 
+- call stack space: _O(1)_
+- general space: _O(1)_
+- runtime: _O(n)_
+
+---
+
 ### Higher-order recurrences
 
-##### Fibonacci: conventional
+##### Fibonacci: non-tail recursive
 
 ```
-// non-tail recursive
-// call stack space: O(n)
-// runtime: O(2 ^ n)
-
 const fibonacci = n => {
   if (n <= 1) return n
   return fibonacci(n - 1) + fibonacci(n - 2)
  }
-
 ```
 
-```
-// tail recursive
-// call stack space (without TCO): O(n)
+- call stack space: _O(n)_ (without TCO)
+- runtime: _O(2 ^ n)_
 
+##### Fibonacci: tail recursive
+
+```
 const fibonacci = (n, acc0 = 0, acc1 = 1) => {
   if (n === acc0) return acc0
   if (n === acc1) return acc1
@@ -64,53 +72,61 @@ const fibonacci = (n, acc0 = 0, acc1 = 1) => {
  }
 ```
 
-##### Fibonacci: with robo
+- call stack space: _O(n)_ (without TCO)
+- runtime: _O(n)_
+
+---
+
+##### Fibonacci: with _robo_
+
+`robo: <T>({ base: T[] recurrence: ((results: T[], cases?: number[]) => T) }) => T`
 
 ```
-// runtime: O(n)
-// call stack space: O(1)
-// general space: O(1)
-
 const fibonacci = robo<number>({
   base: [0, 1],
   recurrence: ([subcase0, subcase1]) => subcase0 + subcase1
 })
 ```
 
-##### [Derangements:](https://en.wikipedia.org/wiki/Derangement) conventional
+- call stack space: _O(1)_
+- general space: _O(1)_
+- runtime: _O(n)_
+
+---
+
+##### [Derangements:](https://en.wikipedia.org/wiki/Derangement) non-tail recursive
 
 ```
-// non-tail recursive
-// runtime: O(2 ^ n)
-// call stack space: O(n)
-
 const numDerangements = (n, acc0 = 1, acc1 = 0) => {
+  if (n === 0) return 1
+  if (n === 1) return 0
+  return numDerangements(n - 1, acc1, (n - 1) * (acc0 + acc1))
+ }
+```
+
+- call stack space: _O(n)_
+- runtime: _O(2 ^ n)_
+
+##### [Derangements:](https://en.wikipedia.org/wiki/Derangement) tail recursive
+
+```
+const numDerangements = n => {
   if (n === acc0) return acc0
   if (n === acc1) return acc1
   return (n - 1) * (numDerangements(n - 1) + numDerangements(n - 2))
  }
 ```
 
-```
-// tail recursive
-// runtime: O(n)
-// call stack space (without TCO): O(n)
+- runtime: _O(n)_
+- call stack space (without TCO): _O(n)_
 
-const numDerangements = n => {
-  if (n === 0) return 1
-  if (n === 1) return 0
-  return numDerangements(n - 1, acc1, (n - 1) * (acc0 + acc1))
- }
+---
+
+##### [Derangements:](https://en.wikipedia.org/wiki/Derangement) with _robo_
+
+`robo: <T>({ base: T[] recurrence: ((results: T[], cases?: number[]) => T) }) => T`
 
 ```
-
-##### [Derangements:](https://en.wikipedia.org/wiki/Derangement) with robo
-
-```
-// runtime: O(n)
-// call stack space: O(1)
-// general space: O(1)
-
 const numDerangements = robo<number, number>({
   base: [1, 0],
   recurrence: ([subcase0, subcase1], [previous]) =>
@@ -118,29 +134,34 @@ const numDerangements = robo<number, number>({
 })
 ```
 
+- runtime: _O(n)_
+- call stack space: _O(1)_
+- general space: _O(1)_
+
+---
+
 ### List-based recurrences
 
-##### Subsets: conventional
+##### Subsets: recursive
 
 ```
-// call stack space: O(elements.length)
-// general space: O(2 ^ n)
-
-const subsets = elements => {
+const subsets = <Element>(elements: Element[]) => {
   if (!elements.length) return [[]]
   const subcase = subsets(elements.slice(1))
   return [...subcase, ...subcase.map(subset => [...subset, element])]
 }
-
-
 ```
 
-##### Subsets: with robo
+- call stack space: _O(elements.length)_
+- general space: _O(2 ^ n)_
+
+---
+
+##### Subsets: with _robo_
+
+`robo: <T, Element>({ base: T[] recurrence: ((results: T[], cases?: Element[]) => T) }) => T`
 
 ```
-// call stack space: O(1)
-// general space: O(2 ^ n)
-
 const subsets = roboList<number[][], number>({
   base: [[[]]],
   recurrence: ([subsets], [element]) => [
@@ -150,9 +171,23 @@ const subsets = roboList<number[][], number>({
 })
 ```
 
+- call stack space: _O(1)_
+- general space: _O(2 ^ n)_
+
+---
+
 ### General recurrences, `next` and `base` functions, `memoize`
 
 ##### Binomial coefficient: conventional
+
+```
+robo: <T, Ordinal>({
+  base: (o: Ordinal) => T,
+  next: (o: Ordinal) => Ordinal[],
+  recurrence: ((results: T[], cases?: Ordinal[]) => T)
+  memoize: boolean | (o: Ordinal) => string | number
+}) => T`
+```
 
 ```
 type Choose = {
@@ -169,59 +204,115 @@ const binomialCoefficient = robo<number, Choose>({
   recurrence: sum,
   memoize: true
 })
+
 ```
+
+- stack space O(1)
 
 ##### Make change
 
 ```
+
 // linear call call stack space, exponential runtime
 
 ```
 
 ```
-// constant call call stack space, O(coins.length * target) runtime
+
+// constant call call stack space, O(coins.length \* target) runtime
 interface Change {
-  coins: number[]
-  target: number
+coins: number[]
+target: number
 }
 
 const makeChange = robo<number, Change>({
-  base: ({ coins, target }) => {
-    if (!coins.length) return 0
-    if (target && !coins.length) return 0
-    if (!target) return 1
-  },
-  next: ({ coins, target }) => [
-    { coins, target: target - coins[0] },
-    { coins: coins.slice(1), target }
-  ],
-  recurrence: sum,
-  memoize: ({ coins, target }) => [coins.length, target]
+base: ({ coins, target }) => {
+if (!coins.length) return 0
+if (target && !coins.length) return 0
+if (!target) return 1
+},
+next: ({ coins, target }) => [
+{ coins, target: target - coins[0] },
+{ coins: coins.slice(1), target }
+],
+recurrence: sum,
+memoize: ({ coins, target }) => [coins.length, target]
 })
-```
-
-### Recurrence parameters: tuplicity
-
-##### Unbounded recurrence parameters
 
 ```
-// runtime: O(2 ^ n)
-// stack space O(n)
+
+---
+
+### Unbounded recurrence parameters: `tuplicity`
+
+#### powers of two: complete induction recurrence
+
+Powers of two satisfy the following (rather inefficient) mathematical equation:
+
+> 2 <sup>n</sup> - 1 = 2<sup>0</sup> + ... + 2<sup>n - 1</sup>
+
+From this we get the following recursive implementation where the number of used subcases is unbounded (scales with the input):
+
+```
+
+// Inefficient recurrence for powers of two
 
 const powerOfTwo = n =>
-  n ? sum([...new Array(n - 1)].map((_, i) => powerOfTwo(i))) + 1 : 1
-```
+n ? sum(range(0, n).map(powerOfTwo)) + 1 : 1
 
 ```
-// runtime: O(n ^ 2)
-// stack space: O(1)
-// general space: O(n)
+
+- runtime: _O(2 ^ n)_
+- stack space _O(n)_
+
+#### powers of two: with robo
+
+**For a `recurrence` function with a paramater that is unbounded in size, this must be specified by assigning the optional `tuplicity` parameter to `Infinity`:**
+
+```
+
+// Inefficient recurrence for powers of two
 
 const powerOfTwo = robo<number, number>({
-  base: [1],
-  tuplicity: Infinity,
-  recurrence: cases => sum(cases) + 1
+base: [1],
+tuplicity: Infinity,
+recurrence: cases => sum(cases) + 1
+})
+
+```
+
+- runtime: _O(n \* n)_
+- stack space: _O(1)_
+- general space: _O(n)_
+
+#### Bounded recurrence parameters: `tuplicity`
+
+**Specify constant recurrence parameters size with `tuplicity` for space optimizations:**
+
+```
+const binaryTreeSearch = <T>(target: T) =>
+  robo<Root<T>, Root<T>>({
+    tuplicity: 2,
+    base: node => {
+      if (node.value === target) return node
+      if (!node) return null
+    },
+    recurrence: ([left, right]) => left || right,
+    next: node => [node.left, node.right]
 })
 ```
 
-##### Constant tuplicity optimization
+**_or_ by representing `next` with an array**
+
+```
+const binaryTreeSearch = <T>(target: T) =>
+  robo<Root<T>, Root<T>>({
+    base: node => {
+      if (node.value === target) return node
+      if (!node) return null
+    },
+    recurrence: ([left, right]) => left || right,
+    next: [node => node.left, node => node.right]
+})
+
+```

@@ -30,7 +30,7 @@ const factorial = (n, acc = 1) =>
 
 ---
 
-##### Factorial: with _robo_
+##### Factorial: with `robo`
 
 `robo: <T>({ base: T[] recurrence: ((results: T[], cases?: number[]) => T) }) => T`
 
@@ -77,7 +77,7 @@ const fibonacci = (n, acc0 = 0, acc1 = 1) => {
 
 ---
 
-##### Fibonacci: with _robo_
+##### Fibonacci: with `robo`
 
 `robo: <T>({ base: T[] recurrence: ((results: T[], cases?: number[]) => T) }) => T`
 
@@ -122,7 +122,7 @@ const numDerangements = n => {
 
 ---
 
-##### [Derangements:](https://en.wikipedia.org/wiki/Derangement) with _robo_
+##### [Derangements:](https://en.wikipedia.org/wiki/Derangement) with `robo`
 
 `robo: <T>({ base: T[] recurrence: ((results: T[], cases?: number[]) => T) }) => T`
 
@@ -157,7 +157,7 @@ const subsets = <Element>(elements: Element[]) => {
 
 ---
 
-##### Subsets: with _robo_
+##### Subsets: with `robo`
 
 `robo: <T, Element>({ base: T[] recurrence: ((results: T[], cases?: Element[]) => T) }) => T`
 
@@ -271,7 +271,7 @@ n ? sum(range(0, n).map(powerOfTwo)) + 1 : 1
 - stack space _O(n)_
 - runtime: _O(2 ^ n)_
 
-#### powers of two: with robo
+#### powers of two: with `robo`
 
 **For a `recurrence` function with a paramater that is unbounded in size, this must be specified by assigning the optional `tuplicity` parameter to `Infinity`:**
 

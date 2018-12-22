@@ -97,10 +97,10 @@ const fibonacci = robo<number>({
 ##### [Derangements:](https://en.wikipedia.org/wiki/Derangement) non-tail recursive
 
 ```
-const numDerangements = (n, acc0 = 1, acc1 = 0) => {
-  if (n === 0) return 1
-  if (n === 1) return 0
-  return numDerangements(n - 1, acc1, (n - 1) * (acc0 + acc1))
+const numDerangements = n => {
+  if (n === acc0) return acc0
+  if (n === acc1) return acc1
+  return (n - 1) * (numDerangements(n - 1) + numDerangements(n - 2))
  }
 ```
 
@@ -110,10 +110,10 @@ const numDerangements = (n, acc0 = 1, acc1 = 0) => {
 ##### [Derangements:](https://en.wikipedia.org/wiki/Derangement) tail recursive
 
 ```
-const numDerangements = n => {
-  if (n === acc0) return acc0
-  if (n === acc1) return acc1
-  return (n - 1) * (numDerangements(n - 1) + numDerangements(n - 2))
+const numDerangements = (n, acc0 = 1, acc1 = 0) => {
+  if (n === 0) return 1
+  if (n === 1) return 0
+  return numDerangements(n - 1, acc1, (n - 1) * (acc0 + acc1))
  }
 ```
 

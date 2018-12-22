@@ -3,7 +3,7 @@
 **Recursive Optimization through Bare Operation**
 
 - Eliminate recursive call stack consumption
-- Modularize and abstract recurrence-base defintion
+- Modularize and abstract recurrence-based defintion
 - Implicitly memoize
 
 ### First-order recurrences

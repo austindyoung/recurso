@@ -204,10 +204,11 @@ const binomialCoefficient = robo<number, Choose>({
   recurrence: sum,
   memoize: true
 })
-
 ```
 
-- stack space O(1)
+- stack space: _O(1)_
+- general space: _O(k)_
+- runtime: _O(n \* k)_
 
 ##### Make change
 
@@ -242,6 +243,10 @@ const makeChange = robo<number, Change>({
 
 ```
 
+- stack space: _O(1)_
+- general space: _O(Max(coins.length, target))_
+- runtime: _O(coins.length \* target)_
+
 ---
 
 ### Unbounded recurrence parameters: `tuplicity`
@@ -263,8 +268,8 @@ n ? sum(range(0, n).map(powerOfTwo)) + 1 : 1
 
 ```
 
-- runtime: _O(2 ^ n)_
 - stack space _O(n)_
+- runtime: _O(2 ^ n)_
 
 #### powers of two: with robo
 
@@ -282,9 +287,9 @@ recurrence: cases => sum(cases) + 1
 
 ```
 
-- runtime: _O(n \* n)_
 - stack space: _O(1)_
 - general space: _O(n)_
+- runtime: _O(n \* n)_
 
 #### Bounded recurrence parameters: `tuplicity`
 

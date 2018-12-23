@@ -251,7 +251,7 @@ const makeChange = robo<number, Change>({
 
 ### Unbounded recurrence parameters: `tuplicity`
 
-#### powers of two: complete induction recurrence
+#### Powers of two: complete induction recurrence
 
 Powers of two satisfy the following (rather inefficient) mathematical equation:
 
@@ -271,7 +271,7 @@ n ? sum(range(0, n).map(powerOfTwo)) + 1 : 1
 - stack space _O(n)_
 - runtime: _O(2<sup>n</sup>)_
 
-#### powers of two: with `robo`
+#### Powers of two: with `robo`
 
 **For a `recurrence` function with a paramater that is unbounded in size, this must be specified by assigning the optional `tuplicity` parameter to `Infinity`:**
 

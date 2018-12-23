@@ -253,11 +253,11 @@ const makeChange = robo<number, Change>({
 
 #### Powers of two: complete induction recurrence
 
-Powers of two satisfy the following (inefficient) mathematical equation:
+Powers of two satisfy the following mathematical equation:
 
 > 2 <sup>n</sup> - 1 = 2<sup>0</sup> + ... + 2<sup>n - 1</sup>
 
-From this we get the following recursive implementation where the number of used subcases is unbounded (scales with the input):
+From this we get the following (inefficient) recurrence where the number of used subcases is unbounded (scales with the input):
 
 ```
 

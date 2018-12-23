@@ -1,6 +1,4 @@
-# robo.js
-
-![](https://ibb.co/zb8tZRY)
+![](https://i.ibb.co/ydG4yBk/Screen-Shot-2018-12-22-at-9-17-03-PM.png)
 **Recursive Optimization through Bare Operation**
 
 - Eliminate recursive call stack consumption

@@ -264,7 +264,9 @@ From this we get the following (inefficient) recurrence where the number of used
 // Inefficient recurrence for powers of two
 
 const powerOfTwo = n =>
-n ? sum(range(0, n).map(powerOfTwo)) + 1 : 1
+  n ?
+    sum(range(0, n).map(powerOfTwo)) + 1
+    : 1
 
 ```
 
@@ -280,9 +282,9 @@ n ? sum(range(0, n).map(powerOfTwo)) + 1 : 1
 // Inefficient recurrence for powers of two
 
 const powerOfTwo = robo<number, number>({
-base: [1],
-tuplicity: Infinity,
-recurrence: cases => sum(cases) + 1
+  base: [1],
+  tuplicity: Infinity,
+  recurrence: cases => sum(cases) + 1
 })
 
 ```

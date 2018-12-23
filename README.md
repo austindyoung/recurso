@@ -291,7 +291,7 @@ recurrence: cases => sum(cases) + 1
 - general space: _O(n)_
 - runtime: _O(n<sup>2</sup>)_
 
-#### Bounded recurrence parameters: `tuplicity`
+### Bounded recurrence parameters: `tuplicity`
 
 **Specify constant recurrence parameters size with `tuplicity` for space optimizations:**
 

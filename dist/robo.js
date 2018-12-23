@@ -135,17 +135,42 @@ const getGetBaseCase = (firstCases, base) => (recursiveCase) => base[firstCases.
 const TailRecursive = (x) => HasIntersection(x, Props, [BaseArray, Next]) ||
     (HasIntersection(x, Props, [BaseFunction, Next]) &&
         DoesntHave(x, [Recurrence]));
-const postorderTraversal = (root, base, next) => {
-    if (base(root))
-        return [];
+class Result {
+    constructor(value) {
+        this.value = value;
+    }
+}
+const curry = (...args) => { };
+const combine = (...args) => { };
+const evaluate = (root, { base, next, recurrence }) => {
+    if (!root) {
+        return;
+    }
+    let node;
     const stack = [];
-    const result = [];
-    stack.push(root);
-    while (stack.length !== 0) {
-        const pointer = stack.pop();
-        result.unshift(pointer);
-        next(pointer).forEach(child => {
-            stack.push(child);
+    let result;
+    stack.push(node);
+    while (stack.length) {
+        node = stack.pop();
+        if (node instanceof Result) {
+            result = combine(result, node, recurrence);
+        }
+        const children = next(node);
+        let isCurrying = false;
+        let curried;
+        children.forEach(child => {
+            const baseValue = base(child);
+            if (baseValue !== undefined && isCurrying) {
+                isCurrying = true;
+                curried = curried
+                    ? curry(curried, baseValue, recurrence)
+                    : new Result(baseValue);
+                stack.push(curried);
+            }
+            else {
+                isCurrying = false;
+                stack.push(child);
+            }
         });
     }
     return result;
@@ -157,6 +182,14 @@ const robo = (params) => {
         return generatedFunction;
     }
     if (NonLinear(params)) {
+        return (recursiveCase) => {
+            const { base, recurrence } = params;
+            return evaluate(recursiveCase, {
+                base,
+                next: params.next,
+                recurrence
+            });
+        };
     }
     if (ImplicitLinear(params)) {
         const ordering = makeOffsetGenerator(makeRangeGenerator(), params.offset);
@@ -165,9 +198,9 @@ const robo = (params) => {
             next }));
     }
     if (ExplicitLinear(params)) {
-        debugger;
         return roboLinear(params);
     }
+    throw 'unable to generate function from arguments';
 };
 const roboLinear = ({ base, recurrence, ordering, tuplicity, offset, next }) => recursiveCase => {
     const innerIterator = makeOffsetGenerator(ordering, offset)();

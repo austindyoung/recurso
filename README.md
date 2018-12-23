@@ -14,7 +14,7 @@ const factorial = n =>
   n ? n * factorial(n - 1) : 1
 ```
 
-- call call stack space: _O(n)_
+- call stack space: _O(n)_
 - runtime: _O(n)_
 
 ##### Factorial: non-tail recursive
@@ -24,7 +24,7 @@ const factorial = (n, acc = 1) =>
   n ? factorial(n - 1, n * acc) : acc
 ```
 
-- call call stack space: _O(n)_ (without TCO)
+- call stack space: _O(n)_ (without TCO)
 - runtime: _O(n)_
 
 ---
@@ -40,7 +40,7 @@ const factorial = robo<number>({
 })
 ```
 
-- call call stack space: _O(1)_
+- call stack space: _O(1)_
 - general space: _O(1)_
 - runtime: _O(n)_
 
@@ -57,7 +57,7 @@ const fibonacci = n => {
  }
 ```
 
-- call call stack space: _O(n)_ (without TCO)
+- call stack space: _O(n)_ (without TCO)
 - runtime: _O(2<sup>n</sup>)_
 
 ##### Fibonacci: tail recursive
@@ -71,7 +71,7 @@ const fibonacci = (n, acc0 = 0, acc1 = 1) => {
  }
 ```
 
-- call call stack space: _O(n)_ (without TCO)
+- call stack space: _O(n)_ (without TCO)
 - runtime: _O(n)_
 
 ---
@@ -88,7 +88,7 @@ const fibonacci = robo<number>({
 })
 ```
 
-- call call stack space: _O(1)_
+- call stack space: _O(1)_
 - general space: _O(1)_
 - runtime: _O(n)_
 
@@ -104,7 +104,7 @@ const numDerangements = n => {
  }
 ```
 
-- call call stack space: _O(n)_
+- call stack space: _O(n)_
 - runtime: _O(2<sup>n</sup>)_
 
 ##### [Derangements:](https://en.wikipedia.org/wiki/Derangement) tail recursive
@@ -118,7 +118,7 @@ const numDerangements = (n, acc0 = 1, acc1 = 0) => {
 ```
 
 - runtime: _O(n)_
-- call call stack space (without TCO): _O(n)_
+- call stack space (without TCO): _O(n)_
 
 ---
 
@@ -135,7 +135,7 @@ const numDerangements = robo<number, number>({
 ```
 
 - runtime: _O(n)_
-- call call stack space: _O(1)_
+- call stack space: _O(1)_
 - general space: _O(1)_
 
 ---
@@ -152,7 +152,7 @@ const subsets = <Element>(elements: Element[]) => {
 }
 ```
 
-- call call stack space: _O(elements.length)_
+- call stack space: _O(elements.length)_
 - general space: _O(2<sup>n</sup>)_
 
 ---
@@ -171,7 +171,7 @@ const subsets = roboList<number[][], number>({
 })
 ```
 
-- call call stack space: _O(1)_
+- call stack space: _O(1)_
 - general space: _O(2<sup>n</sup>)_
 
 ---

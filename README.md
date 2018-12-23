@@ -1,5 +1,6 @@
 # robo.js
 
+![](https://ibb.co/zb8tZRY)
 **Recursive Optimization through Bare Operation**
 
 - Eliminate recursive call stack consumption
@@ -59,7 +60,7 @@ const fibonacci = n => {
 ```
 
 - call stack space: _O(n)_ (without TCO)
-- runtime: _O(2 ^ n)_
+- runtime: _O(2<sup>n</sup>)_
 
 ##### Fibonacci: tail recursive
 
@@ -85,6 +86,7 @@ const fibonacci = (n, acc0 = 0, acc1 = 1) => {
 const fibonacci = robo<number>({
   base: [0, 1],
   recurrence: ([subcase0, subcase1]) => subcase0 + subcase1
+  // recurrence: sum
 })
 ```
 
@@ -105,7 +107,7 @@ const numDerangements = n => {
 ```
 
 - call stack space: _O(n)_
-- runtime: _O(2 ^ n)_
+- runtime: _O(2<sup>n</sup>)_
 
 ##### [Derangements:](https://en.wikipedia.org/wiki/Derangement) tail recursive
 
@@ -153,7 +155,7 @@ const subsets = <Element>(elements: Element[]) => {
 ```
 
 - call stack space: _O(elements.length)_
-- general space: _O(2 ^ n)_
+- general space: _O(2<sup>n</sup>)_
 
 ---
 
@@ -172,7 +174,7 @@ const subsets = roboList<number[][], number>({
 ```
 
 - call stack space: _O(1)_
-- general space: _O(2 ^ n)_
+- general space: _O(2<sup>n</sup>)_
 
 ---
 
@@ -208,7 +210,7 @@ const binomialCoefficient = robo<number, Choose>({
 
 - stack space: _O(1)_
 - general space: _O(k)_
-- runtime: _O(n \* k)_
+- runtime: _O(nk)_
 
 ##### Make change
 
@@ -269,7 +271,7 @@ n ? sum(range(0, n).map(powerOfTwo)) + 1 : 1
 ```
 
 - stack space _O(n)_
-- runtime: _O(2 ^ n)_
+- runtime: _O(2<sup>n</sup>)_
 
 #### powers of two: with `robo`
 
@@ -289,7 +291,7 @@ recurrence: cases => sum(cases) + 1
 
 - stack space: _O(1)_
 - general space: _O(n)_
-- runtime: _O(n \* n)_
+- runtime: _O(n<sup>2</sup>)_
 
 #### Bounded recurrence parameters: `tuplicity`
 

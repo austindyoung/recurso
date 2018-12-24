@@ -137,11 +137,11 @@ const subsets = roboList<number[][], number>({
 ##### Binomial coefficient
 
 ```
-robo: <T, Ordinal>({
-  base: (o: Ordinal) => T,
-  next: (o: Ordinal) => Ordinal[],
-  recurrence: ((results: T[], cases?: Ordinal[]) => T)
-  memoize: boolean | (o: Ordinal) => string | number
+robo: <T, Case>({
+  base: (o: Case) => T,
+  next: (o: Case) => Case[],
+  recurrence: ((results: T[], cases?: Case[]) => T)
+  memoize: boolean | (o: Case) => string | number
 }) => T
 ```
 
@@ -169,11 +169,11 @@ const binomialCoefficient = robo<number, Choose>({
 ##### Make change
 
 ```
-robo: <T, Ordinal>({
-  base: (o: Ordinal) => T,
-  next: (o: Ordinal) => Ordinal[],
-  recurrence: ((results: T[], cases?: Ordinal[]) => T)
-  memoize: boolean | (o: Ordinal) => string | number
+robo: <T, Case>({
+  base: (o: Case) => T,
+  next: (o: Case) => Case[],
+  recurrence: ((results: T[], cases?: Case[]) => T)
+  memoize: boolean | (o: Case) => string | number
 }) => T
 ```
 

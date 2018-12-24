@@ -134,7 +134,7 @@ const subsets = roboList<number[][], number>({
 
 ### General recurrences, `next` and `base` functions, `memoize`
 
-##### Binomial coefficient: recursive
+##### Binomial coefficient
 
 ```
 robo: <T, Ordinal>({

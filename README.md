@@ -11,7 +11,7 @@
 
 #### Factorial
 
-`robo: <T>({ base: T[],recurrence: ((results: T[], cases?: number[]) => T) }) => T`
+`robo: <T>({ base: T[], recurrence: ((results: T[], cases?: number[]) => T) }) => T`
 
 ```
 const factorial = robo<number>({

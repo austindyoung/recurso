@@ -138,10 +138,10 @@ const subsets = roboList<number[][], number>({
 
 ```
 robo: <T, Case>({
-  base: (o: Case) => T,
-  next: (o: Case) => Case[],
+  base: (c: Case) => T,
+  next: (c: Case) => Case[],
   recurrence: ((results: T[], cases?: Case[]) => T)
-  memoize: boolean | (o: Case) => string | number
+  memoize: boolean | (c: Case) => string | number
 }) => T
 ```
 
@@ -170,10 +170,10 @@ const binomialCoefficient = robo<number, Choose>({
 
 ```
 robo: <T, Case>({
-  base: (o: Case) => T,
-  next: (o: Case) => Case[],
+  base: (c: Case) => T,
+  next: (c: Case) => Case[],
   recurrence: ((results: T[], cases?: Case[]) => T)
-  memoize: boolean | (o: Case) => string | number
+  memoize: boolean | (c: Case) => string | number
 }) => T
 ```
 
@@ -206,7 +206,7 @@ const makeChange = robo<number, Change>({
 
 ### Unbounded recurrence parameters: `tuplicity`
 
-#### Powers of two: complete induction recurrence
+#### Powers of twc: complete induction recurrence
 
 Powers of two satisfy the following mathematical equation:
 

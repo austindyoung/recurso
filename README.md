@@ -11,7 +11,7 @@
 
 #### Factorial
 
-`robo: <T>({ base: T[] recurrence: ((results: T[], cases?: number[]) => T) }) => T`
+`robo: <T>({ base: T[],recurrence: ((results: T[], cases?: number[]) => T) }) => T`
 
 ```
 const factorial = robo<number>({
@@ -104,7 +104,7 @@ const numDerangements = robo<number, number>({
 
 ##### Subsets
 
-`robo: <T, Element>({ base: T[] recurrence: ((results: T[], cases?: Element[]) => T) }) => T`
+`robo: <T, Element>({ base: T[], recurrence: ((results: T[], cases?: Element[]) => T) }) => T`
 
 ```
 const subsets = roboList<number[][], number>({

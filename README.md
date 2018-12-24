@@ -36,6 +36,8 @@ const factorial = robo<number>({
 </p>
 </details></summary>
 
+---
+
 ### Higher-order recurrences
 
 #### Fibonacci

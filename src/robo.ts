@@ -261,7 +261,6 @@ const evaluate = <T, Case>(
     if (node instanceof Result) {
       result = combine(result, node, recurrence)
     }
-    //right child is pushed first so that left is processed first
     const children = next(node)
     let isCurrying = false
     let curried

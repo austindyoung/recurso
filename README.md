@@ -5,31 +5,11 @@
 - Modularize and abstract recurrence-based defintion
 - Implicitly memoize
 
+## Usage
+
 ### First-order recurrences
 
-##### Factorial: non-tail recursive
-
-```
-const factorial = n =>
-  n ? n * factorial(n - 1) : 1
-```
-
-- call stack space: _O(n)_
-- runtime: _O(n)_
-
-##### Factorial: non-tail recursive
-
-```
-const factorial = (n, acc = 1) =>
-  n ? factorial(n - 1, n * acc) : acc
-```
-
-- call stack space: _O(n)_ (without TCO)
-- runtime: _O(n)_
-
----
-
-##### Factorial: with `robo`
+#### Factorial
 
 `robo: <T>({ base: T[] recurrence: ((results: T[], cases?: number[]) => T) }) => T`
 
@@ -44,41 +24,23 @@ const factorial = robo<number>({
 - general space: _O(1)_
 - runtime: _O(n)_
 
----
+<details><summary><strong>Performance comparison</strong></summary>
+  <p>
+
+|                      | Non-tail recursive | Tail recursive (without TCO) | `robo` |
+| -------------------- | ------------------ | ---------------------------- | ------ |
+| **call stack space** | O(n)               | O(n)                         | O(1)   |
+| **global space**     | O(1)               | O(1)                         | O(1)   |
+| **runtime**          | O(n)               | O(n)                         | O(n)   |
+
+</p>
+</details></summary>
 
 ### Higher-order recurrences
 
-##### Fibonacci: non-tail recursive
+#### Fibonacci
 
-```
-const fibonacci = n => {
-  if (n <= 1) return n
-  return fibonacci(n - 1) + fibonacci(n - 2)
- }
-```
-
-- call stack space: _O(n)_ (without TCO)
-- runtime: _O(2<sup>n</sup>)_
-
-##### Fibonacci: tail recursive
-
-```
-const fibonacci = (n, acc0 = 0, acc1 = 1) => {
-  if (n === acc0) return acc0
-  if (n === acc1) return acc1
-  if (n === 1) return acc1
-  return fibonacci(n - 1, acc1, acc0 + acc1)
- }
-```
-
-- call stack space: _O(n)_ (without TCO)
-- runtime: _O(n)_
-
----
-
-##### Fibonacci: with `robo`
-
-`robo: <T>({ base: T[] recurrence: ((results: T[], cases?: number[]) => T) }) => T`
+`robo: <T>({ base: T[], recurrence: ((results: T[], cases?: number[]) => T) }) => T`
 
 ```
 const fibonacci = robo<number>({
@@ -92,39 +54,23 @@ const fibonacci = robo<number>({
 - general space: _O(1)_
 - runtime: _O(n)_
 
----
+<details><summary><strong>Performance comparison</strong></summary>
+  <p>
 
-##### [Derangements:](https://en.wikipedia.org/wiki/Derangement) non-tail recursive
+|                      | Non-tail recursive | Tail recursive (without TCO) | `robo` |
+| -------------------- | ------------------ | ---------------------------- | ------ |
+| **call stack space** | O(n)               | O(n)                         | O(1)   |
+| **global space**     | O(1)               | O(1)                         | O(1)   |
+| **runtime**          | O(2<sup>n</sup>)   | O(n)                         | O(n)   |
 
-```
-const numDerangements = n => {
-  if (n === acc0) return acc0
-  if (n === acc1) return acc1
-  return (n - 1) * (numDerangements(n - 1) + numDerangements(n - 2))
- }
-```
-
-- call stack space: _O(n)_
-- runtime: _O(2<sup>n</sup>)_
-
-##### [Derangements:](https://en.wikipedia.org/wiki/Derangement) tail recursive
-
-```
-const numDerangements = (n, acc0 = 1, acc1 = 0) => {
-  if (n === 0) return 1
-  if (n === 1) return 0
-  return numDerangements(n - 1, acc1, (n - 1) * (acc0 + acc1))
- }
-```
-
-- runtime: _O(n)_
-- call stack space (without TCO): _O(n)_
+</p>
+</details></summary>
 
 ---
 
-##### [Derangements:](https://en.wikipedia.org/wiki/Derangement) with `robo`
+#### [Derangements](https://en.wikipedia.org/wiki/Derangement)
 
-`robo: <T>({ base: T[] recurrence: ((results: T[], cases?: number[]) => T) }) => T`
+`robo: <T>({ base: T[], recurrence: ((results: T[], cases?: number[]) => T) }) => T`
 
 ```
 const numDerangements = robo<number, number>({
@@ -138,26 +84,23 @@ const numDerangements = robo<number, number>({
 - call stack space: _O(1)_
 - general space: _O(1)_
 
+<details><summary><strong>Performance comparison</strong></summary>
+  <p>
+
+|                      | Non-tail recursive | Tail recursive (without TCO) | `robo` |
+| -------------------- | ------------------ | ---------------------------- | ------ |
+| **call stack space** | O(n)               | O(n)                         | O(1)   |
+| **global space**     | O(1)               | O(1)                         | O(1)   |
+| **runtime**          | O(2<sup>n</sup>)   | O(n)                         | O(n)   |
+
+</p>
+</details></summary>
+
 ---
 
 ### List-based recurrences
 
-##### Subsets: recursive
-
-```
-const subsets = <Element>(elements: Element[]) => {
-  if (!elements.length) return [[]]
-  const subcase = subsets(elements.slice(1))
-  return [...subcase, ...subcase.map(subset => [...subset, element])]
-}
-```
-
-- call stack space: _O(elements.length)_
-- general space: _O(2<sup>n</sup>)_
-
----
-
-##### Subsets: with `robo`
+##### Subsets
 
 `robo: <T, Element>({ base: T[] recurrence: ((results: T[], cases?: Element[]) => T) }) => T`
 
@@ -173,6 +116,17 @@ const subsets = roboList<number[][], number>({
 
 - call stack space: _O(1)_
 - general space: _O(2<sup>n</sup>)_
+
+<details><summary><strong>Performance comparison</strong></summary>
+  <p>
+
+|                      | Recursive          | `robo`           |
+| -------------------- | ------------------ | ---------------- |
+| **call stack space** | O(elements.length) | O(1)             |
+| **global space**     | O(2<sup>n</sup>)   | O(2<sup>n</sup>) |
+
+</p>
+</details></summary>
 
 ---
 
@@ -240,7 +194,6 @@ const makeChange = robo<number, Change>({
   recurrence: sum,
   memoize: ({ coins, target }) => [coins.length, target]
 })
-
 ```
 
 - call stack space: _O(1)_
@@ -259,26 +212,12 @@ Powers of two satisfy the following mathematical equation:
 
 From this we get the following (inefficient) recurrence where the number of used subcases is unbounded (scales with the input):
 
-```
-
-// Inefficient recurrence for powers of two
-
-const powerOfTwo = n =>
-  n ?
-    sum(range(0, n).map(powerOfTwo)) + 1
-    : 1
-
-```
-
-- call stack space _O(n)_
-- runtime: _O(2<sup>n</sup>)_
-
-#### Powers of two: with `robo`
+> powerOfTwo(n) = powerOfTwo(0) + ... + powerOfTwo(n - 1),
+> powerOfTwo(0) = 1
 
 **For a `recurrence` function with a paramater that is unbounded in size, this must be specified by assigning the optional `tuplicity` parameter to `Infinity`:**
 
 ```
-
 // Inefficient recurrence for powers of two
 
 const powerOfTwo = robo<number, number>({
@@ -286,16 +225,29 @@ const powerOfTwo = robo<number, number>({
   tuplicity: Infinity,
   recurrence: cases => sum(cases) + 1
 })
-
 ```
 
 - call stack space: _O(1)_
 - general space: _O(n)_
 - runtime: _O(n<sup>2</sup>)_
 
+<details><summary><strong>Performance comparison</strong></summary>
+  <p>
+
+|                      | Non-tail recursive | [Tail recursive]() (without TCO) | `robo` |
+| -------------------- | ------------------ | -------------------------------- | ------ |
+| **call stack space** | O(n)               | O(n)                             | O(1)   |
+| **global space**     | O(1)               | O(1)                             | O(1)   |
+| **runtime**          | O(n!)              | O(n)                             | O(n)   |
+
+</p>
+</details></summary>
+
+---
+
 ### Bounded recurrence parameters: `tuplicity`
 
-**Specify constant recurrence parameters size with `tuplicity` for space optimizations:**
+**Specify constant recurrence parameters size with `tuplicity` parameter for space optimizations:**
 
 ```
 const binaryTreeSearch = <T>(target: T) =>
@@ -322,5 +274,65 @@ const binaryTreeSearch = <T>(target: T) =>
     recurrence: ([left, right]) => left || right,
     next: [node => node.left, node => node.right]
 })
+```
+
+##### Non-tail recursive comparison
 
 ```
+const numDerangements = n => {
+  if (n === acc0) return acc0
+  if (n === acc1) return acc1
+  return (n - 1) * (numDerangements(n - 1) + numDerangements(n - 2))
+ }
+```
+
+- call stack space: _O(n)_
+- runtime: _O(2<sup>n</sup>)_
+
+##### Tail recursive comparison
+
+```
+const numDerangements = (n, acc0 = 1, acc1 = 0) => {
+  if (n === 0) return 1
+  if (n === 1) return 0
+  return numDerangements(n - 1, acc1, (n - 1) * (acc0 + acc1))
+ }
+```
+
+- runtime: _O(n)_
+- call stack space (without TCO): _O(n)_
+
+```
+const subsets = <Element>(elements: Element[]) => {
+  if (!elements.length) return [[]]
+  const subcase = subsets(elements.slice(1))
+  return [...subcase, ...subcase.map(subset => [...subset, element])]
+}
+```
+
+- call stack space: _O(elements.length)_
+- general space: _O(2<sup>n</sup>)_
+
+---
+
+```
+
+// Inefficient recurrence for powers of two
+
+const powerOfTwo = n =>
+  n ?
+    sum(range(0, n).map(powerOfTwo)) + 1
+    : 1
+
+```
+
+- call stack space _O(n)_
+- runtime: _O(2<sup>n</sup>)_
+
+#### Powers of two
+
+|                      | Non-tail recursive | Tail recursive (without TCO) | `robo` |
+| -------------------- | ------------------ | ---------------------------- | ------ |
+| **call stack space** | O(n)               | O(n)                         | O(1)   |
+| **global space**     | O(1)               | O(1)                         | O(1)   |
+| **runtime**          | O(n)               | O(n)                         | O(n)   |

@@ -214,7 +214,8 @@ Powers of two satisfy the following mathematical equation:
 
 From this we get the following (inefficient) recurrence where the number of used subcases is unbounded (scales with the input):
 
-> powerOfTwo(n) = powerOfTwo(0) + ... + powerOfTwo(n - 1),
+> powerOfTwo(n) = powerOfTwo(0) + ... + powerOfTwo(n - 1)
+
 > powerOfTwo(0) = 1
 
 **For a `recurrence` function with a paramater that is unbounded in size, this must be specified by assigning the optional `tuplicity` parameter to `Infinity`:**

@@ -224,8 +224,8 @@ From this we get the following (inefficient) recurrence where the number of used
 // Inefficient recurrence for powers of two
 
 const powerOfTwo = robo<number, number>({
-  base: [1],
   tuplicity: Infinity,
+  base: [1],
   recurrence: cases => sum(cases) + 1
 })
 ```

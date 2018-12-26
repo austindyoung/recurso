@@ -21,7 +21,7 @@ const factorial = robo<number>({
 ```
 
 - call stack space: _O(1)_
-- general space: _O(1)_
+- global space: _O(1)_
 - runtime: _O(n)_
 
 <details><summary><strong>Performance comparison</strong></summary>
@@ -53,7 +53,7 @@ const fibonacci = robo<number>({
 ```
 
 - call stack space: _O(1)_
-- general space: _O(1)_
+- global space: _O(1)_
 - runtime: _O(n)_
 
 <details><summary><strong>Performance comparison</strong></summary>
@@ -84,7 +84,7 @@ const numDerangements = robo<number, number>({
 
 - runtime: _O(n)_
 - call stack space: _O(1)_
-- general space: _O(1)_
+- global space: _O(1)_
 
 <details><summary><strong>Performance comparison</strong></summary>
   <p>
@@ -117,7 +117,7 @@ const subsets = roboList<number[][], number>({
 ```
 
 - call stack space: _O(1)_
-- general space: _O(2<sup>n</sup>)_
+- global space: _O(2<sup>n</sup>)_
 
 <details><summary><strong>Performance comparison</strong></summary>
   <p>
@@ -163,7 +163,7 @@ const binomialCoefficient = robo<number, Choose>({
 ```
 
 - call stack space: _O(1)_
-- general space: _O(k)_
+- global space: _O(k)_
 - runtime: _O(nk)_
 
 ##### Make change
@@ -199,7 +199,7 @@ const makeChange = robo<number, Change>({
 ```
 
 - call stack space: _O(1)_
-- general space: _O(Max(coins.length, target))_
+- global space: _O(Max(coins.length, target))_
 - runtime: _O(coins.length \* target)_
 
 ---
@@ -231,7 +231,7 @@ const powerOfTwo = robo<number, number>({
 ```
 
 - call stack space: _O(1)_
-- general space: _O(n)_
+- global space: _O(n)_
 - runtime: _O(n<sup>2</sup>)_
 
 <details><summary><strong>Performance comparison</strong></summary>
